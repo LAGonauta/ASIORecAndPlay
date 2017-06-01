@@ -5,8 +5,34 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ASIORecAndPlay"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        
-    </Grid>
+        Title="ASIO Rec and Play" Height="300" Width="300" MinWidth="300" MinHeight="300">
+    <StackPanel>
+        <Button x:Name="buttonBegin" Content="Begin" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Click="OnButtonBeginClick"/>
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <GroupBox Header="Recording device" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <ComboBox x:Name="comboAsioRecordDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120"/>
+                </GroupBox>
+                <Button x:Name="buttonRecCP" Content="Control Panel" Click="OnButtonCPClick"/>
+                <GroupBox x:Name="groupRecChannels" Header="Available Channels">
+                    <StackPanel x:Name="stackRecChannels"/>
+                </GroupBox>
+            </StackPanel>
+            <StackPanel  Grid.Column="1">
+                <GroupBox Header="Playback device" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <ComboBox x:Name="comboAsioPlayDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120"/>
+                </GroupBox>
+                <Button x:Name="buttonPlayCP" Content="Control Panel"  Click="OnButtonCPClick"/>
+                <GroupBox Header="Available Channels">
+                    <StackPanel x:Name="stackPlayChannels">
+
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
 </Window>
