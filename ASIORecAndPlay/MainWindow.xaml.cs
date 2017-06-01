@@ -113,6 +113,7 @@ namespace ASIORecAndPlay
                     {
                         channels = 2;
                     }
+                    comboChannelConfig.IsEnabled = false;
 
                     NAudio.Wave.WaveFormat format = new NAudio.Wave.WaveFormat(48000, 32, channels);
                     buffer = new NAudio.Wave.BufferedWaveProvider(format);
@@ -125,7 +126,7 @@ namespace ASIORecAndPlay
                     asioRec.Play();
                     asioPlay.Play();
 
-                    buttonBegin.Content = "Stop"; 
+                    buttonBegin.Content = "Stop";
                 }
                 else
                 {
@@ -158,6 +159,7 @@ namespace ASIORecAndPlay
 
                 running = false;
                 buttonBegin.Content = "Begin";
+                comboChannelConfig.IsEnabled = true;
             }
         }
 
