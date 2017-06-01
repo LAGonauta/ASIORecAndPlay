@@ -32,6 +32,7 @@ namespace ASIORecAndPlay
         private AsioOut asioPlay;
         private BufferedWaveProvider buffer;
         private float[] samples = new float[1024 * 1024];
+        private float[] samplesCorrect = new float[1024 * 1024];
         private byte[] byteSamples = new byte[1024 * 1024 * 4];
         private int channels = 0;
         private bool running;
@@ -89,7 +90,7 @@ namespace ASIORecAndPlay
                 }
 
                 stackPlayChannels.Children.Clear();
-                for (int i = 0; i < asioPlay.DriverInputChannelCount; ++i)
+                for (int i = 0; i < asioPlay.DriverOutputChannelCount; ++i)
                 {
                     TextBlock temp = new TextBlock();
                     temp.Text = asioPlay.AsioOutputChannelName(i);
@@ -99,7 +100,7 @@ namespace ASIORecAndPlay
                 //int inputChannels = Math.Min(asioRec.DriverInputChannelCount, 6); // support up to 6 (5.1)
                 //int outputChannels = Math.Min(asioPlay.DriverOutputChannelCount, 6); // support up to 6 (5.1)
 
-                channels = 2;
+                channels = 6;
                 NAudio.Wave.WaveFormat format = new NAudio.Wave.WaveFormat(48000, 32, channels);
                 buffer = new NAudio.Wave.BufferedWaveProvider(format);
 
@@ -139,8 +140,34 @@ namespace ASIORecAndPlay
         void OnAudioAvailable(object sender, AsioAudioAvailableEventArgs e)
         {
             e.GetAsInterleavedSamples(samples);
-            Buffer.BlockCopy(samples, 0, byteSamples, 0, e.SamplesPerBuffer * channels * 4);
-            buffer.AddSamples(byteSamples, 0, e.SamplesPerBuffer * channels * 4);
+
+            // Correct channel mapping
+            if (channels == 6)
+            {
+                for (int i = 0; i < e.SamplesPerBuffer; ++i)
+                {
+                    samplesCorrect[i * channels + 0 /*FRONT LEFT*/] =
+                        samples[i * channels + 0 /*FRONT LEFT*/];
+                    samplesCorrect[i * channels + 1 /*FRONT RIGHT*/] =
+                        samples[i * channels + 1 /*FRONT RIGHT*/];
+                    samplesCorrect[i * channels + 2 /*FRONT CENTER*/] =
+                        samples[i * channels + 4 /*FRONT CENTER*/];
+                    samplesCorrect[i * channels + 3 /*sub/lfe*/] =
+                        samples[i * channels + 5 /*sub/lfe*/];
+                    samplesCorrect[i * channels + 4 /*REAR LEFT*/] =
+                        samples[i * channels + 2 /*REAR LEFT*/];
+                    samplesCorrect[i * channels + 5 /*REAR RIGHT*/] =
+                        samples[i * channels + 3 /*REAR RIGHT*/];
+                }
+
+                Buffer.BlockCopy(samplesCorrect, 0, byteSamples, 0, e.SamplesPerBuffer * channels * sizeof(float));
+            }
+            else
+            {
+                Buffer.BlockCopy(samples, 0, byteSamples, 0, e.SamplesPerBuffer * channels * sizeof(float));
+            }
+            
+            buffer.AddSamples(byteSamples, 0, e.SamplesPerBuffer * channels * sizeof(float));
             //Trace.WriteLine(buffer.BufferedDuration);
         }
     }
