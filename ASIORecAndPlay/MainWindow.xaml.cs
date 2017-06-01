@@ -83,6 +83,9 @@ namespace ASIORecAndPlay
                     asioRec = new AsioOut((string)comboAsioRecordDevices.SelectedItem);
                     asioPlay = new AsioOut((string)comboAsioPlayDevices.SelectedItem);
 
+                    comboAsioRecordDevices.IsEnabled = false;
+                    comboAsioPlayDevices.IsEnabled = false;
+
                     stackRecChannels.Children.Clear();
                     for (int i = 0; i < asioRec.DriverInputChannelCount; ++i)
                     {
@@ -160,6 +163,8 @@ namespace ASIORecAndPlay
                 running = false;
                 buttonBegin.Content = "Begin";
                 comboChannelConfig.IsEnabled = true;
+                comboAsioRecordDevices.IsEnabled = true;
+                comboAsioPlayDevices.IsEnabled = true;
             }
         }
 
