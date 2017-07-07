@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ASIORecAndPlay"
         mc:Ignorable="d"
-        Title="ASIO Rec and Play" Height="300" Width="300" MinWidth="300" MinHeight="300">
+        Title="ASIO Rec and Play" Height="300" Width="300" MinWidth="300" MinHeight="300"
+        Closing="Window_Closing">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
             <GroupBox HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,5" Header="Channel configuration">

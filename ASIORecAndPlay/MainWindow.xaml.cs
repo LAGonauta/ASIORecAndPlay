@@ -22,210 +22,244 @@ using System.Windows.Controls;
 
 namespace ASIORecAndPlay
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// Based on work by Mark Heath on NAudio ASIO PatchBay
-    /// </summary>
-    public partial class MainWindow : Window
+  /// <summary>
+  /// Interaction logic for MainWindow.xaml
+  /// Based on work by Mark Heath on NAudio ASIO PatchBay
+  /// </summary>
+  public partial class MainWindow : Window
+  {
+    private AsioOut asio_rec;
+    private AsioOut asio_play;
+    private BufferedWaveProvider buffer;
+    private float[] samples = new float[1024 * 1024];
+    private float[] samples_correct = new float[1024 * 1024];
+    private byte[] byte_samples = new byte[1024 * 1024 * 4];
+    private int channels = 2;
+    private bool running;
+
+    System.Windows.Forms.NotifyIcon tray_icon;
+
+    public MainWindow()
     {
-        private AsioOut asioRec;
-        private AsioOut asioPlay;
-        private BufferedWaveProvider buffer;
-        private float[] samples = new float[1024 * 1024];
-        private float[] samplesCorrect = new float[1024 * 1024];
-        private byte[] byteSamples = new byte[1024 * 1024 * 4];
-        private int channels = 2;
-        private bool running;
+      InitializeComponent();
 
-        public MainWindow()
+      var icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetEntryAssembly().ManifestModule.Name);
+
+      tray_icon = new System.Windows.Forms.NotifyIcon()
+      {
+        Visible = true,
+        Text = Title,
+        Icon = icon
+      };
+
+      tray_icon.DoubleClick +=
+        delegate (object sender, EventArgs e)
         {
-            InitializeComponent();
-            foreach (var device in AsioOut.GetDriverNames())
-            {
-                comboAsioRecordDevices.Items.Add(device);
-                comboAsioPlayDevices.Items.Add(device);
-            }
+          this.Show();
+          this.WindowState = WindowState.Normal;
+        };
 
-            if (comboAsioRecordDevices.Items.Count > 0)
-                comboAsioRecordDevices.SelectedIndex = 0;
+      foreach (var device in AsioOut.GetDriverNames())
+      {
+        comboAsioRecordDevices.Items.Add(device);
+        comboAsioPlayDevices.Items.Add(device);
+      }
 
-            if (comboAsioPlayDevices.Items.Count > 0)
-                comboAsioPlayDevices.SelectedIndex = 0;
+      if (comboAsioRecordDevices.Items.Count > 0)
+        comboAsioRecordDevices.SelectedIndex = 0;
 
-            Closing += (sender, args) => Stop();
-        }
+      if (comboAsioPlayDevices.Items.Count > 0)
+        comboAsioPlayDevices.SelectedIndex = 0;
 
-        private void OnButtonCPClick(object sender, RoutedEventArgs e)
-        {
-            if (sender == buttonPlayCP)
-            {
-                if (asioPlay != null)
-                {
-                    asioPlay.ShowControlPanel();
-                }
-            }
-            else if (sender == buttonRecCP)
-            {
-                if (asioRec != null)
-                {
-                    asioRec.ShowControlPanel();
-                }
-            }
-        }
-
-        private void OnButtonBeginClick(object sender, RoutedEventArgs e)
-        {
-            if (!running)
-            {
-                if (comboAsioRecordDevices.SelectedIndex != comboAsioPlayDevices.SelectedIndex)
-                {
-                    running = true;
-                    asioRec = new AsioOut((string)comboAsioRecordDevices.SelectedItem);
-                    asioPlay = new AsioOut((string)comboAsioPlayDevices.SelectedItem);
-
-                    comboAsioRecordDevices.IsEnabled = false;
-                    comboAsioPlayDevices.IsEnabled = false;
-
-                    stackRecChannels.Children.Clear();
-                    for (int i = 0; i < asioRec.DriverInputChannelCount; ++i)
-                    {
-                        TextBlock temp = new TextBlock();
-                        temp.Text = asioRec.AsioInputChannelName(i);
-                        stackRecChannels.Children.Add(temp);
-                    }
-                    buttonRecCP.IsEnabled = true;
-
-                    stackPlayChannels.Children.Clear();
-                    for (int i = 0; i < asioPlay.DriverOutputChannelCount; ++i)
-                    {
-                        TextBlock temp = new TextBlock();
-                        temp.Text = asioPlay.AsioOutputChannelName(i);
-                        stackPlayChannels.Children.Add(temp);
-                    }
-                    buttonPlayCP.IsEnabled = true;
-
-                    if (comboChannelConfig.SelectedIndex == 2)
-                    {
-                        channels = 6;
-                    }
-                    else if (comboChannelConfig.SelectedIndex == 3)
-                    {
-                        channels = 8;
-                    }
-                    else
-                    {
-                        channels = 2;
-                    }
-                    comboChannelConfig.IsEnabled = false;
-
-                    NAudio.Wave.WaveFormat format = new NAudio.Wave.WaveFormat(48000, 32, channels);
-                    buffer = new NAudio.Wave.BufferedWaveProvider(format);
-
-                    asioRec.InitRecordAndPlayback(null, channels, 48000);
-                    asioRec.AudioAvailable += new EventHandler<NAudio.Wave.AsioAudioAvailableEventArgs>(OnAudioAvailable);
-
-                    asioPlay.Init(buffer);
-
-                    asioRec.Play();
-                    asioPlay.Play();
-
-                    buttonBegin.Content = "Stop";
-                }
-                else
-                {
-                    // When using the same ASIO device we must use other type of logic, which is not implemented here.
-                    // The basis of this program, Mark Heath's NAudio ASIO PatchBay, has a proper solution for that.
-                    MessageBox.Show("ASIO devices must not be the same");
-                }
-            }
-            else
-            {
-                Stop();
-            }
-        }
-
-        private void Stop()
-        {
-            if (running)
-            {
-                asioPlay.Stop();
-                asioPlay.Dispose();
-                asioPlay = null;
-                buttonPlayCP.IsEnabled = false;
-                stackPlayChannels.Children.Clear();
-
-                asioRec.Stop();
-                asioRec.Dispose();
-                asioRec = null;
-                buttonRecCP.IsEnabled = false;
-                stackRecChannels.Children.Clear();
-
-                running = false;
-                buttonBegin.Content = "Begin";
-                comboChannelConfig.IsEnabled = true;
-                comboAsioRecordDevices.IsEnabled = true;
-                comboAsioPlayDevices.IsEnabled = true;
-            }
-        }
-
-        void OnAudioAvailable(object sender, AsioAudioAvailableEventArgs e)
-        {
-            e.GetAsInterleavedSamples(samples);
-
-            // Correct channel mapping
-            if (channels == 6)
-            {
-                for (int i = 0; i < e.SamplesPerBuffer; ++i)
-                {
-                    samplesCorrect[i * channels + 0 /*FRONT LEFT*/] =
-                        samples[i * channels + 0 /*FRONT LEFT*/];
-                    samplesCorrect[i * channels + 1 /*FRONT RIGHT*/] =
-                        samples[i * channels + 1 /*FRONT RIGHT*/];
-                    samplesCorrect[i * channels + 2 /*FRONT CENTER*/] =
-                        samples[i * channels + 4 /*FRONT CENTER*/];
-                    samplesCorrect[i * channels + 3 /*sub/lfe*/] =
-                        samples[i * channels + 5 /*sub/lfe*/];
-                    samplesCorrect[i * channels + 4 /*REAR LEFT*/] =
-                        samples[i * channels + 2 /*REAR LEFT*/];
-                    samplesCorrect[i * channels + 5 /*REAR RIGHT*/] =
-                        samples[i * channels + 3 /*REAR RIGHT*/];
-                }
-
-                Buffer.BlockCopy(samplesCorrect, 0, byteSamples, 0, e.SamplesPerBuffer * channels * sizeof(float));
-            }
-            else if (channels == 8)
-            {
-                for (int i = 0; i < e.SamplesPerBuffer; ++i)
-                {
-                    samplesCorrect[i * channels + 0 /*FRONT LEFT*/] =
-                        samples[i * channels + 0 /*FRONT LEFT*/];
-                    samplesCorrect[i * channels + 1 /*FRONT RIGHT*/] =
-                        samples[i * channels + 1 /*FRONT RIGHT*/];
-                    samplesCorrect[i * channels + 2 /*FRONT CENTER*/] =
-                        samples[i * channels + 4 /*FRONT CENTER*/];
-                    samplesCorrect[i * channels + 3 /*sub/lfe*/] =
-                        samples[i * channels + 5 /*sub/lfe*/];
-                    samplesCorrect[i * channels + 4 /*REAR LEFT*/] =
-                        samples[i * channels + 2 /*REAR LEFT*/];
-                    samplesCorrect[i * channels + 5 /*REAR RIGHT*/] =
-                        samples[i * channels + 3 /*REAR RIGHT*/];
-
-                    // Not sure about these two
-                    samplesCorrect[i * channels + 6 /*SIDE LEFT*/] =
-                        samples[i * channels + 6 /*SIDE LEFT*/];
-                    samplesCorrect[i * channels + 7 /*SIDE RIGHT*/] =
-                        samples[i * channels + 7 /*SIDE RIGHT*/];
-                }
-
-                Buffer.BlockCopy(samplesCorrect, 0, byteSamples, 0, e.SamplesPerBuffer * channels * sizeof(float));
-            }
-            else
-            {
-                Buffer.BlockCopy(samples, 0, byteSamples, 0, e.SamplesPerBuffer * channels * sizeof(float));
-            }
-
-            buffer.AddSamples(byteSamples, 0, e.SamplesPerBuffer * channels * sizeof(float));
-            //Trace.WriteLine(buffer.BufferedDuration);
-        }
+      Closing += (sender, args) => Stop();
     }
+
+    protected override void OnStateChanged(EventArgs e)
+    {
+      if (WindowState == WindowState.Minimized)
+      {
+        this.Hide();
+      }
+
+      base.OnStateChanged(e);
+    }
+
+    private void Window_Closing(object sender, EventArgs e)
+    {
+      tray_icon.Visible = false;
+    }
+
+    private void OnButtonCPClick(object sender, RoutedEventArgs e)
+    {
+      if (sender == buttonPlayCP)
+      {
+        if (asio_play != null)
+        {
+          asio_play.ShowControlPanel();
+        }
+      }
+      else if (sender == buttonRecCP)
+      {
+        if (asio_rec != null)
+        {
+          asio_rec.ShowControlPanel();
+        }
+      }
+    }
+
+    private void OnButtonBeginClick(object sender, RoutedEventArgs e)
+    {
+      if (!running)
+      {
+        if (comboAsioRecordDevices.SelectedIndex != comboAsioPlayDevices.SelectedIndex)
+        {
+          running = true;
+          asio_rec = new AsioOut((string)comboAsioRecordDevices.SelectedItem);
+          asio_play = new AsioOut((string)comboAsioPlayDevices.SelectedItem);
+
+          comboAsioRecordDevices.IsEnabled = false;
+          comboAsioPlayDevices.IsEnabled = false;
+
+          stackRecChannels.Children.Clear();
+          for (int i = 0; i < asio_rec.DriverInputChannelCount; ++i)
+          {
+            TextBlock temp = new TextBlock();
+            temp.Text = asio_rec.AsioInputChannelName(i);
+            stackRecChannels.Children.Add(temp);
+          }
+          buttonRecCP.IsEnabled = true;
+
+          stackPlayChannels.Children.Clear();
+          for (int i = 0; i < asio_play.DriverOutputChannelCount; ++i)
+          {
+            TextBlock temp = new TextBlock();
+            temp.Text = asio_play.AsioOutputChannelName(i);
+            stackPlayChannels.Children.Add(temp);
+          }
+          buttonPlayCP.IsEnabled = true;
+
+          if (comboChannelConfig.SelectedIndex == 2)
+          {
+            channels = 6;
+          }
+          else if (comboChannelConfig.SelectedIndex == 3)
+          {
+            channels = 8;
+          }
+          else
+          {
+            channels = 2;
+          }
+          comboChannelConfig.IsEnabled = false;
+
+          NAudio.Wave.WaveFormat format = new NAudio.Wave.WaveFormat(48000, 32, channels);
+          buffer = new NAudio.Wave.BufferedWaveProvider(format);
+
+          asio_rec.InitRecordAndPlayback(null, channels, 48000);
+          asio_rec.AudioAvailable += new EventHandler<NAudio.Wave.AsioAudioAvailableEventArgs>(OnAudioAvailable);
+
+          asio_play.Init(buffer);
+
+          asio_rec.Play();
+          asio_play.Play();
+
+          buttonBegin.Content = "Stop";
+        }
+        else
+        {
+          // When using the same ASIO device we must use other type of logic, which is not implemented here.
+          // The basis of this program, Mark Heath's NAudio ASIO PatchBay, has a proper solution for that.
+          MessageBox.Show("ASIO devices must not be the same");
+        }
+      }
+      else
+      {
+        Stop();
+      }
+    }
+
+    private void Stop()
+    {
+      if (running)
+      {
+        asio_play.Stop();
+        asio_play.Dispose();
+        asio_play = null;
+        buttonPlayCP.IsEnabled = false;
+        stackPlayChannels.Children.Clear();
+
+        asio_rec.Stop();
+        asio_rec.Dispose();
+        asio_rec = null;
+        buttonRecCP.IsEnabled = false;
+        stackRecChannels.Children.Clear();
+
+        running = false;
+        buttonBegin.Content = "Begin";
+        comboChannelConfig.IsEnabled = true;
+        comboAsioRecordDevices.IsEnabled = true;
+        comboAsioPlayDevices.IsEnabled = true;
+      }
+    }
+
+    void OnAudioAvailable(object sender, AsioAudioAvailableEventArgs e)
+    {
+      e.GetAsInterleavedSamples(samples);
+
+      // Correct channel mapping
+      if (channels == 6)
+      {
+        for (int i = 0; i < e.SamplesPerBuffer; ++i)
+        {
+          samples_correct[i * channels + 0 /*FRONT LEFT*/] =
+              samples[i * channels + 0 /*FRONT LEFT*/];
+          samples_correct[i * channels + 1 /*FRONT RIGHT*/] =
+              samples[i * channels + 1 /*FRONT RIGHT*/];
+          samples_correct[i * channels + 2 /*FRONT CENTER*/] =
+              samples[i * channels + 4 /*FRONT CENTER*/];
+          samples_correct[i * channels + 3 /*sub/lfe*/] =
+              samples[i * channels + 5 /*sub/lfe*/];
+          samples_correct[i * channels + 4 /*REAR LEFT*/] =
+              samples[i * channels + 2 /*REAR LEFT*/];
+          samples_correct[i * channels + 5 /*REAR RIGHT*/] =
+              samples[i * channels + 3 /*REAR RIGHT*/];
+        }
+
+        Buffer.BlockCopy(samples_correct, 0, byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(float));
+      }
+      else if (channels == 8)
+      {
+        for (int i = 0; i < e.SamplesPerBuffer; ++i)
+        {
+          samples_correct[i * channels + 0 /*FRONT LEFT*/] =
+              samples[i * channels + 0 /*FRONT LEFT*/];
+          samples_correct[i * channels + 1 /*FRONT RIGHT*/] =
+              samples[i * channels + 1 /*FRONT RIGHT*/];
+          samples_correct[i * channels + 2 /*FRONT CENTER*/] =
+              samples[i * channels + 4 /*FRONT CENTER*/];
+          samples_correct[i * channels + 3 /*sub/lfe*/] =
+              samples[i * channels + 5 /*sub/lfe*/];
+          samples_correct[i * channels + 4 /*REAR LEFT*/] =
+              samples[i * channels + 2 /*REAR LEFT*/];
+          samples_correct[i * channels + 5 /*REAR RIGHT*/] =
+              samples[i * channels + 3 /*REAR RIGHT*/];
+
+          // Not sure about these two
+          samples_correct[i * channels + 6 /*SIDE LEFT*/] =
+              samples[i * channels + 6 /*SIDE LEFT*/];
+          samples_correct[i * channels + 7 /*SIDE RIGHT*/] =
+              samples[i * channels + 7 /*SIDE RIGHT*/];
+        }
+
+        Buffer.BlockCopy(samples_correct, 0, byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(float));
+      }
+      else
+      {
+        Buffer.BlockCopy(samples, 0, byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(float));
+      }
+
+      buffer.AddSamples(byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(float));
+      //Trace.WriteLine(buffer.BufferedDuration);
+    }
+  }
 }
