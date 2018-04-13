@@ -17,7 +17,6 @@
 using System;
 using System.Windows;
 using NAudio.Wave;
-using System.Diagnostics;
 using System.Windows.Controls;
 
 namespace ASIORecAndPlay
@@ -31,8 +30,7 @@ namespace ASIORecAndPlay
     private AsioOut asio_rec;
     private AsioOut asio_play;
     private BufferedWaveProvider buffer;
-    private float[] samples = new float[1024 * 1024];
-    private float[] samples_correct = new float[1024 * 1024];
+    private int[] samples_correct = new int[1024 * 1024];
     private byte[] byte_samples = new byte[1024 * 1024 * 4];
     private int channels = 2;
     private bool running;
@@ -152,12 +150,13 @@ namespace ASIORecAndPlay
           }
           comboChannelConfig.IsEnabled = false;
 
-          NAudio.Wave.WaveFormat format = new NAudio.Wave.WaveFormat(48000, 32, channels);
+          var format = new NAudio.Wave.WaveFormat(48000, 32, channels);
+          //var format = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(48000, channels);
           buffer = new NAudio.Wave.BufferedWaveProvider(format);
 
           asio_rec.InitRecordAndPlayback(null, channels, 48000);
           asio_rec.AudioAvailable += new EventHandler<NAudio.Wave.AsioAudioAvailableEventArgs>(OnAudioAvailable);
-
+          
           asio_play.Init(buffer);
 
           asio_rec.Play();
@@ -204,62 +203,64 @@ namespace ASIORecAndPlay
 
     void OnAudioAvailable(object sender, AsioAudioAvailableEventArgs e)
     {
-      e.GetAsInterleavedSamples(samples);
-
       // Correct channel mapping
       if (channels == 6)
       {
         for (int i = 0; i < e.SamplesPerBuffer; ++i)
         {
           samples_correct[i * channels + 0 /*FRONT LEFT*/] =
-              samples[i * channels + 0 /*FRONT LEFT*/];
+            GetInputSampleInt32LSB(e.InputBuffers[0], i);
           samples_correct[i * channels + 1 /*FRONT RIGHT*/] =
-              samples[i * channels + 1 /*FRONT RIGHT*/];
+              GetInputSampleInt32LSB(e.InputBuffers[1], i);
           samples_correct[i * channels + 2 /*FRONT CENTER*/] =
-              samples[i * channels + 4 /*FRONT CENTER*/];
+              GetInputSampleInt32LSB(e.InputBuffers[4], i);
           samples_correct[i * channels + 3 /*sub/lfe*/] =
-              samples[i * channels + 5 /*sub/lfe*/];
+              GetInputSampleInt32LSB(e.InputBuffers[5], i);
           samples_correct[i * channels + 4 /*REAR LEFT*/] =
-              samples[i * channels + 2 /*REAR LEFT*/];
+              GetInputSampleInt32LSB(e.InputBuffers[2], i);
           samples_correct[i * channels + 5 /*REAR RIGHT*/] =
-              samples[i * channels + 3 /*REAR RIGHT*/];
+              GetInputSampleInt32LSB(e.InputBuffers[3], i);
         }
 
-        Buffer.BlockCopy(samples_correct, 0, byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(float));
+        Buffer.BlockCopy(samples_correct, 0, byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(int));
       }
       else if (channels == 8)
       {
         for (int i = 0; i < e.SamplesPerBuffer; ++i)
         {
           samples_correct[i * channels + 0 /*FRONT LEFT*/] =
-              samples[i * channels + 0 /*FRONT LEFT*/];
+            GetInputSampleInt32LSB(e.InputBuffers[0], i);
           samples_correct[i * channels + 1 /*FRONT RIGHT*/] =
-              samples[i * channels + 1 /*FRONT RIGHT*/];
+              GetInputSampleInt32LSB(e.InputBuffers[1], i);
           samples_correct[i * channels + 2 /*FRONT CENTER*/] =
-              samples[i * channels + 4 /*FRONT CENTER*/];
+              GetInputSampleInt32LSB(e.InputBuffers[4], i);
           samples_correct[i * channels + 3 /*sub/lfe*/] =
-              samples[i * channels + 5 /*sub/lfe*/];
+              GetInputSampleInt32LSB(e.InputBuffers[5], i);
           samples_correct[i * channels + 4 /*REAR LEFT*/] =
-              samples[i * channels + 2 /*REAR LEFT*/];
+              GetInputSampleInt32LSB(e.InputBuffers[2], i);
           samples_correct[i * channels + 5 /*REAR RIGHT*/] =
-              samples[i * channels + 3 /*REAR RIGHT*/];
+              GetInputSampleInt32LSB(e.InputBuffers[3], i);
 
           // Not sure about these two
           samples_correct[i * channels + 6 /*SIDE LEFT*/] =
-              samples[i * channels + 6 /*SIDE LEFT*/];
+              GetInputSampleInt32LSB(e.InputBuffers[6], i);
           samples_correct[i * channels + 7 /*SIDE RIGHT*/] =
-              samples[i * channels + 7 /*SIDE RIGHT*/];
+              GetInputSampleInt32LSB(e.InputBuffers[7], i);
         }
 
-        Buffer.BlockCopy(samples_correct, 0, byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(float));
+        Buffer.BlockCopy(samples_correct, 0, byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(int));
       }
       else
       {
-        Buffer.BlockCopy(samples, 0, byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(float));
+        Buffer.BlockCopy(samples_correct, 0, byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(int));
       }
 
-      buffer.AddSamples(byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(float));
-      //Trace.WriteLine(buffer.BufferedDuration);
+      buffer.AddSamples(byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(int));
+    }
+
+    private unsafe int GetInputSampleInt32LSB(IntPtr inputBuffer, int n)
+    {
+      return *((int*)inputBuffer + n);
     }
   }
 }
