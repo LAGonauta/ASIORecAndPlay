@@ -151,8 +151,8 @@ namespace ASIORecAndPlay
             channels = 2;
           }
           comboChannelConfig.IsEnabled = false;
-
-          NAudio.Wave.WaveFormat format = new NAudio.Wave.WaveFormat(48000, 32, channels);
+          
+          var format = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(48000, channels);
           buffer = new NAudio.Wave.BufferedWaveProvider(format);
 
           asio_rec.InitRecordAndPlayback(null, channels, 48000);
