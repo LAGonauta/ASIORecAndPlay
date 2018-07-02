@@ -19,6 +19,7 @@ using System.Windows;
 using NAudio.Wave;
 using System.Diagnostics;
 using System.Windows.Controls;
+using System.Threading;
 
 namespace ASIORecAndPlay
 {
@@ -38,6 +39,20 @@ namespace ASIORecAndPlay
     private bool running;
 
     System.Windows.Forms.NotifyIcon tray_icon;
+
+    public delegate void UpdateStatusTextCallback(string message);
+
+    private void DispatchStatusText(object buffer)
+    {
+      string message = "Buffered time: " + ((BufferedWaveProvider)buffer).BufferedDuration.TotalMilliseconds.ToString() + " ms.";
+      status_text.Dispatcher.Invoke(new UpdateStatusTextCallback(this.UpdateText),
+        new object[] { message });
+    }
+
+    private void UpdateText(string message)
+    {
+      status_text.Text = message;
+    }
 
     public MainWindow()
     {
@@ -107,6 +122,7 @@ namespace ASIORecAndPlay
       }
     }
 
+    Timer status_text_timer;
     private void OnButtonBeginClick(object sender, RoutedEventArgs e)
     {
       if (!running)
@@ -151,7 +167,7 @@ namespace ASIORecAndPlay
             channels = 2;
           }
           comboChannelConfig.IsEnabled = false;
-          
+
           var format = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(48000, channels);
           buffer = new NAudio.Wave.BufferedWaveProvider(format);
 
@@ -164,6 +180,8 @@ namespace ASIORecAndPlay
           asio_play.Play();
 
           buttonBegin.Content = "Stop";
+
+          status_text_timer = new Timer(new TimerCallback(this.DispatchStatusText), buffer, 0, 1000);
         }
         else
         {
@@ -174,6 +192,9 @@ namespace ASIORecAndPlay
       }
       else
       {
+        status_text_timer.Dispose();
+        status_text.Dispatcher.Invoke(new UpdateStatusTextCallback(this.UpdateText),
+          new object[] { "Stopped." });
         Stop();
       }
     }
@@ -182,6 +203,10 @@ namespace ASIORecAndPlay
     {
       if (running)
       {
+        status_text_timer.Dispose();
+        status_text.Dispatcher.Invoke(new UpdateStatusTextCallback(this.UpdateText),
+          new object[] { "Stopped." });
+
         asio_play.Stop();
         asio_play.Dispose();
         asio_play = null;
@@ -259,7 +284,6 @@ namespace ASIORecAndPlay
       }
 
       buffer.AddSamples(byte_samples, 0, e.SamplesPerBuffer * channels * sizeof(float));
-      //Trace.WriteLine(buffer.BufferedDuration);
     }
   }
 }

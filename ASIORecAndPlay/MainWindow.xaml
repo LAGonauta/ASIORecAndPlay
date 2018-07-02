@@ -7,41 +7,50 @@
         mc:Ignorable="d"
         Title="ASIO Rec and Play" Height="300" Width="300" MinWidth="300" MinHeight="300"
         Closing="Window_Closing">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel>
-            <GroupBox HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,5" Header="Channel configuration">
-                <ComboBox x:Name="comboChannelConfig">
-                    <ComboBoxItem Content="2"/>
-                    <ComboBoxItem Content="4" IsEnabled="False"/>
-                    <ComboBoxItem Content="5.1" IsSelected="True"/>
-                    <ComboBoxItem Content="7.1"/>
-                </ComboBox>
-            </GroupBox>
-            <Button x:Name="buttonBegin" Content="Begin" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Click="OnButtonBeginClick" Margin="0,0,0,4"/>
-            <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
-                <GroupBox Header="Recording device" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.Column="0">
-                    <StackPanel Grid.Column="0" Margin="0,0,2,0">
-                        <ComboBox x:Name="comboAsioRecordDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120" Margin="0,0,0,5"/>
-                        <Button x:Name="buttonRecCP" Content="Control Panel" Click="OnButtonCPClick" IsEnabled="False" Margin="0,0,0,5"/>
-                        <GroupBox Header="Available Channels">
-                            <StackPanel x:Name="stackRecChannels"/>
-                        </GroupBox>
-                    </StackPanel>
+    <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Name="status_text" />
+            </StatusBarItem>
+        </StatusBar>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <GroupBox HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,5" Header="Channel configuration">
+                    <ComboBox x:Name="comboChannelConfig">
+                        <ComboBoxItem Content="2"/>
+                        <ComboBoxItem Content="4" IsEnabled="False"/>
+                        <ComboBoxItem Content="5.1" IsSelected="True"/>
+                        <ComboBoxItem Content="7.1"/>
+                    </ComboBox>
                 </GroupBox>
-                <GroupBox Header="Playback device" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.Column="1">
-                    <StackPanel   Margin="2,0,0,0">
-                        <ComboBox x:Name="comboAsioPlayDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120" Margin="0,0,0,5"/>
-                        <Button x:Name="buttonPlayCP" Content="Control Panel"  Click="OnButtonCPClick" IsEnabled="False" Margin="0,0,0,5"/>
-                        <GroupBox Header="Available Channels">
-                            <StackPanel x:Name="stackPlayChannels"/>
-                        </GroupBox>
-                    </StackPanel>
-                </GroupBox>
-            </Grid>
-        </StackPanel>
-    </ScrollViewer> 
+                <Button x:Name="buttonBegin" Content="Begin" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Click="OnButtonBeginClick" Margin="0,0,0,4"/>
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <GroupBox Header="Recording device" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.Column="0">
+                        <StackPanel Grid.Column="0" Margin="0,0,2,0">
+                            <ComboBox x:Name="comboAsioRecordDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120" Margin="0,0,0,5"/>
+                            <Button x:Name="buttonRecCP" Content="Control Panel" Click="OnButtonCPClick" IsEnabled="False" Margin="0,0,0,5"/>
+                            <GroupBox Header="Available Channels">
+                                <StackPanel x:Name="stackRecChannels"/>
+                            </GroupBox>
+                        </StackPanel>
+                    </GroupBox>
+                    <GroupBox Header="Playback device" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.Column="1">
+                        <StackPanel   Margin="2,0,0,0">
+                            <ComboBox x:Name="comboAsioPlayDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120" Margin="0,0,0,5"/>
+                            <Button x:Name="buttonPlayCP" Content="Control Panel"  Click="OnButtonCPClick" IsEnabled="False" Margin="0,0,0,5"/>
+                            <GroupBox Header="Available Channels">
+                                <StackPanel x:Name="stackPlayChannels"/>
+                            </GroupBox>
+                        </StackPanel>
+                    </GroupBox>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+
+
 </Window>
