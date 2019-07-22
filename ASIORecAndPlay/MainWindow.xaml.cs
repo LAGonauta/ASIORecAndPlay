@@ -211,7 +211,7 @@ namespace ASIORecAndPlay
         stackRecChannels.Children.Clear();
 
         running = false;
-        buttonBegin.Content = "Begin";
+        buttonBegin.Content = "Start";
         comboRecordingChannelConfig.IsEnabled = true;
         comboAsioRecordDevices.IsEnabled = true;
         comboAsioPlayDevices.IsEnabled = true;
