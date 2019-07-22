@@ -4,8 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ASIORecAndPlay"
+        xmlns:controls="clr-namespace:AudioVUMeter.Controls;assembly=AudioVUMeterWPFControl"
         mc:Ignorable="d"
-        Title="ASIO Rec and Play" Height="300" Width="300" MinWidth="300" MinHeight="300"
+        Title="ASIO Rec and Play" Height="380" Width="410" MinWidth="300" MinHeight="300"
         Closing="Window_Closing">
     <DockPanel>
         <StatusBar DockPanel.Dock="Bottom">
@@ -15,35 +16,155 @@
         </StatusBar>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <GroupBox HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,5" Header="Channel configuration">
-                    <ComboBox x:Name="comboChannelConfig">
-                        <ComboBoxItem Content="2"/>
-                        <ComboBoxItem Content="4" IsEnabled="False"/>
-                        <ComboBoxItem Content="5.1" IsSelected="True"/>
-                        <ComboBoxItem Content="7.1"/>
-                    </ComboBox>
-                </GroupBox>
-                <Button x:Name="buttonBegin" Content="Begin" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Click="OnButtonBeginClick" Margin="0,0,0,4"/>
+                <Button x:Name="buttonBegin" Content="Start" VerticalAlignment="Center" Height="20" Click="OnButtonBeginClick" Margin="1" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <GroupBox Header="Recording Audio Meters" Grid.Column="0">
+                        <Grid Name="recordingAudioMeter">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="1.00" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">L</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="1">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.90" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">R</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="2" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="2">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.80" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">C</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="3" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="3">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.60" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SL</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="4" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="4">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.40" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SR</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="5" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="5">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.20" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BL</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="6" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="6">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.10" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BR</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="7" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="7">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.00" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SW</TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Header="Playback Audio Meters" Grid.Column="1">
+                        <Grid Name="playbackAudioMeter">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="1.00" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">L</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="1">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.90" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">R</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="2" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="2">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.80" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">C</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="3" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="3">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.60" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SL</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="4" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="4">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.40" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SR</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="5" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="5">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.20" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BL</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="6" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="6">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.10" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BR</TextBlock>
+                            </StackPanel>
+                            <Border Grid.Column="7" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <StackPanel Grid.Column="7">
+                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.00" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SW</TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
                 <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
                     </Grid.ColumnDefinitions>
                     <GroupBox Header="Recording device" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.Column="0">
                         <StackPanel Grid.Column="0" Margin="0,0,2,0">
-                            <ComboBox x:Name="comboAsioRecordDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120" Margin="0,0,0,5"/>
-                            <Button x:Name="buttonRecCP" Content="Control Panel" Click="OnButtonCPClick" IsEnabled="False" Margin="0,0,0,5"/>
+                            <GroupBox HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,5" Header="Channel configuration">
+                                <ComboBox x:Name="comboRecordingChannelConfig">
+                                    <ComboBoxItem Content="2.0" />
+                                    <ComboBoxItem Content="4.0" IsEnabled="False" />
+                                    <ComboBoxItem Content="5.1" IsSelected="True" />
+                                    <ComboBoxItem Content="7.1" />
+                                </ComboBox>
+                            </GroupBox>
+                            <ComboBox x:Name="comboAsioRecordDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120" Margin="0,0,0,5" />
+                            <Button x:Name="buttonRecCP" Content="Control Panel" Click="OnButtonCPClick" Margin="0,0,0,5" />
                             <GroupBox Header="Available Channels">
-                                <StackPanel x:Name="stackRecChannels"/>
+                                <StackPanel x:Name="stackRecChannels" />
                             </GroupBox>
                         </StackPanel>
                     </GroupBox>
                     <GroupBox Header="Playback device" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.Column="1">
                         <StackPanel   Margin="2,0,0,0">
-                            <ComboBox x:Name="comboAsioPlayDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120" Margin="0,0,0,5"/>
-                            <Button x:Name="buttonPlayCP" Content="Control Panel"  Click="OnButtonCPClick" IsEnabled="False" Margin="0,0,0,5"/>
+                            <GroupBox HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,5" Header="Channel configuration">
+                                <ComboBox x:Name="comboPlaybackChannelConfig">
+                                    <ComboBoxItem Content="2.0" />
+                                    <ComboBoxItem Content="4.0" IsEnabled="False" />
+                                    <ComboBoxItem Content="5.1" IsSelected="True" />
+                                    <ComboBoxItem Content="7.1" />
+                                </ComboBox>
+                            </GroupBox>
+                            <ComboBox x:Name="comboAsioPlayDevices" HorizontalAlignment="Center" VerticalAlignment="Center" Width="120" Margin="0,0,0,5" />
+                            <Button x:Name="buttonPlayCP" Content="Control Panel"  Click="OnButtonCPClick" Margin="0,0,0,5" />
                             <GroupBox Header="Available Channels">
-                                <StackPanel x:Name="stackPlayChannels"/>
+                                <StackPanel x:Name="stackPlayChannels" />
                             </GroupBox>
                         </StackPanel>
                     </GroupBox>
@@ -51,6 +172,4 @@
             </StackPanel>
         </ScrollViewer>
     </DockPanel>
-
-
 </Window>
