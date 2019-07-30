@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see<http://www.gnu.org/licenses/>.
 
+using AudioVUMeter;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,13 +35,14 @@ namespace ASIORecAndPlay
 
     private System.Windows.Forms.NotifyIcon tray_icon;
 
-    public delegate void UpdateStatusTextCallback(string message);
-
     private void DispatchStatusText(object buffer)
     {
-      string message = $"Buffered time: {((RecAndPlay)buffer).BufferedDuration().TotalMilliseconds.ToString()} ms.";
-      status_text.Dispatcher.Invoke(new UpdateStatusTextCallback(UpdateText),
-        new object[] { message });
+      status_text.Dispatcher.Invoke(() => UpdateText($"Buffered time: {((RecAndPlay)buffer).BufferedDuration().TotalMilliseconds.ToString()} ms."));
+    }
+
+    private void DispatchPlaybackMeters(object buffer)
+    {
+      playBack_left.Dispatcher.Invoke(() => UpdateMeter(((RecAndPlay)buffer).PlaybackAudioValue));
     }
 
     private void UpdateText(string message)
@@ -47,11 +50,23 @@ namespace ASIORecAndPlay
       status_text.Text = message;
     }
 
+    private void UpdateMeter(VolumeMeterChannels values)
+    {
+      playBack_left.NewSampleValues(1, new VUValue[] { values.Left });
+      playBack_right.NewSampleValues(1, new VUValue[] { values.Right });
+      playBack_center.NewSampleValues(1, new VUValue[] { values.Center });
+      playBack_bl.NewSampleValues(1, new VUValue[] { values.BackLeft });
+      playBack_br.NewSampleValues(1, new VUValue[] { values.BackRight });
+      playBack_sl.NewSampleValues(1, new VUValue[] { values.SideLeft });
+      playBack_sr.NewSampleValues(1, new VUValue[] { values.SideRight });
+      playBack_sw.NewSampleValues(1, new VUValue[] { values.Sub });
+    }
+
     public MainWindow()
     {
       InitializeComponent();
 
-      var icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetEntryAssembly().ManifestModule.Name);
+      var icon = System.Drawing.Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().ManifestModule.Name);
 
       tray_icon = new System.Windows.Forms.NotifyIcon()
       {
@@ -91,6 +106,11 @@ namespace ASIORecAndPlay
       if (WindowState == WindowState.Minimized)
       {
         Hide();
+        asioRecAndPlay.CalculateRMS = false;
+      }
+      else
+      {
+        asioRecAndPlay.CalculateRMS = true;
       }
 
       base.OnStateChanged(e);
@@ -127,6 +147,7 @@ namespace ASIORecAndPlay
     }
 
     private Timer status_text_timer;
+    private Timer audio_meter_timer;
 
     private void OnButtonBeginClick(object sender, RoutedEventArgs e)
     {
@@ -171,17 +192,26 @@ namespace ASIORecAndPlay
             }
           }
           comboRecordingChannelConfig.IsEnabled = false;
+          comboPlaybackChannelConfig.IsEnabled = false;
 
           buttonBegin.Content = "Stop";
 
-          asioRecAndPlay.SetChannelMapping(new Dictionary<uint, uint>
+          asioRecAndPlay.SetChannelMapping(new ChannelMapping(new Dictionary<uint, uint>
           {
             { 0, 0 },
-            { 1, 1 }
-          });
+            { 1, 1 },
+            //{ 2, 4 },
+            //{ 3, 5 },
+            //{ 4, 2 },
+            //{ 5, 3 },
+            //{ 6, 6 },
+            //{ 7, 7 },
+          }));
+          asioRecAndPlay.CalculateRMS = true;
           asioRecAndPlay.Play();
 
           status_text_timer = new Timer(new TimerCallback(DispatchStatusText), asioRecAndPlay, 0, 1000);
+          audio_meter_timer = new Timer(new TimerCallback(DispatchPlaybackMeters), asioRecAndPlay, 0, 300);
         }
         else
         {
@@ -193,8 +223,8 @@ namespace ASIORecAndPlay
       else
       {
         status_text_timer.Dispose();
-        status_text.Dispatcher.Invoke(new UpdateStatusTextCallback(UpdateText),
-          new object[] { "Stopped." });
+        audio_meter_timer.Dispose();
+        status_text.Dispatcher.Invoke(() => UpdateText("Stopped."));
         Stop();
       }
     }
@@ -204,8 +234,10 @@ namespace ASIORecAndPlay
       if (running)
       {
         status_text_timer.Dispose();
-        status_text.Dispatcher.Invoke(new UpdateStatusTextCallback(UpdateText),
-          new object[] { "Stopped." });
+        status_text.Dispatcher.Invoke(() => UpdateText("Stopped."));
+
+        audio_meter_timer.Dispose();
+        playBack_left.Dispatcher.Invoke(() => UpdateMeter(new VolumeMeterChannels()));
 
         stackPlayChannels.Children.Clear();
         stackRecChannels.Children.Clear();
@@ -213,6 +245,7 @@ namespace ASIORecAndPlay
         running = false;
         buttonBegin.Content = "Start";
         comboRecordingChannelConfig.IsEnabled = true;
+        comboPlaybackChannelConfig.IsEnabled = true;
         comboAsioRecordDevices.IsEnabled = true;
         comboAsioPlayDevices.IsEnabled = true;
         asioRecAndPlay.Dispose();

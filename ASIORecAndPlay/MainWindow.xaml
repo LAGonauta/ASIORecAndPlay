@@ -17,118 +17,59 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <Button x:Name="buttonBegin" Content="Start" VerticalAlignment="Center" Height="20" Click="OnButtonBeginClick" Margin="1" />
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                    </Grid.ColumnDefinitions>
-                    <GroupBox Header="Recording Audio Meters" Grid.Column="0">
-                        <Grid Name="recordingAudioMeter">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="1.00" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">L</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="1">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.90" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">R</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="2" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="2">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.80" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">C</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="3" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="3">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.60" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SL</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="4" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="4">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.40" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SR</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="5" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="5">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.20" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BL</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="6" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="6">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.10" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BR</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="7" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="7">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.00" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SW</TextBlock>
-                            </StackPanel>
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox Header="Playback Audio Meters" Grid.Column="1">
-                        <Grid Name="playbackAudioMeter">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="1.00" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">L</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="1">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.90" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">R</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="2" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="2">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.80" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">C</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="3" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="3">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.60" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SL</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="4" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="4">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.40" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SR</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="5" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="5">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.20" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BL</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="6" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="6">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.10" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BR</TextBlock>
-                            </StackPanel>
-                            <Border Grid.Column="7" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
-                            <StackPanel Grid.Column="7">
-                                <controls:AudioVUMeter VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.00" />
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SW</TextBlock>
-                            </StackPanel>
-                        </Grid>
-                    </GroupBox>
-                </Grid>
+                <GroupBox Header="Playback Audio Meters">
+                    <Grid Name="playbackAudioMeter">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <controls:AudioVUMeter Name="playBack_left" VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="1.00" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">L</TextBlock>
+                        </StackPanel>
+                        <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                        <StackPanel Grid.Column="1">
+                            <controls:AudioVUMeter Name="playBack_right" VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.90" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">R</TextBlock>
+                        </StackPanel>
+                        <Border Grid.Column="2" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                        <StackPanel Grid.Column="2">
+                            <controls:AudioVUMeter Name="playBack_center" VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.80" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">C</TextBlock>
+                        </StackPanel>
+                        <Border Grid.Column="3" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                        <StackPanel Grid.Column="3">
+                            <controls:AudioVUMeter Name="playBack_sl" VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.60" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SL</TextBlock>
+                        </StackPanel>
+                        <Border Grid.Column="4" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                        <StackPanel Grid.Column="4">
+                            <controls:AudioVUMeter Name="playBack_sr" VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.40" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SR</TextBlock>
+                        </StackPanel>
+                        <Border Grid.Column="5" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                        <StackPanel Grid.Column="5">
+                            <controls:AudioVUMeter Name="playBack_bl" VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.20" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BL</TextBlock>
+                        </StackPanel>
+                        <Border Grid.Column="6" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                        <StackPanel Grid.Column="6">
+                            <controls:AudioVUMeter Name="playBack_br" VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.10" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">BR</TextBlock>
+                        </StackPanel>
+                        <Border Grid.Column="7" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                        <StackPanel Grid.Column="7">
+                            <controls:AudioVUMeter Name="playBack_sw" VUOrientation="BottomToTop" MinHeight="100" MinWidth="20" Value="0.00" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">SW</TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
                 <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
