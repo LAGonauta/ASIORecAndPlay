@@ -12,53 +12,65 @@ namespace ASIORecAndPlay
   {
     private const int maxChannels = 8;
     private const int intSize = sizeof(Int32);
-    private const int maxSamples = 1 << 16;
+    private const int maxSamples = 1 << 14;
 
     private AsioOut asioRec;
     private AsioOut asioPlay;
     private BufferedWaveProvider playBackBuffer;
 
-    private int[] singleChannelSamples = new int[maxSamples];
     private int[] deinterleavedMappedOutputSamples = new int[maxSamples * maxChannels];
     private int[] interleavedOutputSamples = new int[maxSamples * maxChannels];
     private byte[] interleavedBytesOutputSamples = new byte[maxSamples * intSize * maxChannels];
 
-    private int playbackChannels = 2;
-    private int recordingChannels = 2;
     public bool Valid { get; private set; }
     public bool CalculateRMS { get; set; }
 
     private IEnumerable<(uint inputChannel, uint outputChannel)> channelMapping;
+    private uint firstInputChannel, lastInputChannel, firstOutputChannel, lastOutputChannel;
 
-    public RecAndPlay(string recordingDevice, int recordingChannels, string playingDevice, int playbackChannels, ChannelMapping channelMapping = null)
+    public RecAndPlay(string recordingDevice, string playingDevice, ChannelMapping channelMapping)
     {
-      this.recordingChannels = recordingChannels;
-      this.playbackChannels = playbackChannels;
-
       asioRec = new AsioOut(recordingDevice);
+      asioPlay = new AsioOut(playingDevice);
 
-      asioRec.InitRecordAndPlayback(null, recordingChannels, 48000);
+      if (channelMapping.OutputChannels.Any() == false || !ValidChannelMapping(channelMapping))
+      {
+        return;
+      }
+
+      this.channelMapping = channelMapping.GetMappingList();
+
+      firstInputChannel = channelMapping.InputChannels.Min();
+      lastInputChannel = channelMapping.InputChannels.Max();
+
+      asioRec.InputChannelOffset = (int)firstInputChannel;
+      asioRec.InitRecordAndPlayback(null, (int)(lastInputChannel - firstInputChannel) + 1, 48000);
       asioRec.AudioAvailable += new EventHandler<AsioAudioAvailableEventArgs>(OnAudioAvailable);
 
-      var format = new WaveFormat(48000, 32, playbackChannels);
+      firstOutputChannel = channelMapping.OutputChannels.Min();
+      lastOutputChannel = channelMapping.OutputChannels.Max();
+
+      // Still needs to think about the logic to map each channel to the volume meter
+      firstOutputChannel = 0;
+      lastOutputChannel = 7;
+
+      //var format = new WaveFormat(48000, 32, (int)(lastOutputChannel - firstOutputChannel) + 1);
+      var format = new WaveFormat(48000, 32, asioPlay.DriverOutputChannelCount);
       playBackBuffer = new BufferedWaveProvider(format);
 
-      asioPlay = new AsioOut(playingDevice);
+      asioPlay.ChannelOffset = (int)firstOutputChannel;
       asioPlay.Init(playBackBuffer);
       Valid = true;
-      this.channelMapping = channelMapping?.GetMappingList() ?? new List<(uint, uint)>();
     }
 
-    public bool SetChannelMapping(ChannelMapping channelMapping)
+    private bool ValidChannelMapping(ChannelMapping channelMapping)
     {
-      if (!Valid ||
-        channelMapping.InputChannels.Max() > asioRec.NumberOfInputChannels ||
-        channelMapping.OutputChannels.Max() > asioPlay.NumberOfOutputChannels)
+      if (channelMapping.InputChannels.Max() > asioRec.DriverInputChannelCount ||
+          channelMapping.OutputChannels.Max() > asioPlay.DriverOutputChannelCount)
       {
         return false;
       }
 
-      this.channelMapping = channelMapping.GetMappingList();
       return true;
     }
 
@@ -66,8 +78,13 @@ namespace ASIORecAndPlay
 
     public string[] GetRecordingDeviceChannelsNames()
     {
+      if (!Valid)
+      {
+        return new string[0];
+      }
+
       List<string> names = new List<string>();
-      for (int i = 0; i < asioRec?.DriverInputChannelCount; ++i)
+      for (int i = 0; i < asioRec.DriverInputChannelCount; ++i)
       {
         names.Add(asioRec.AsioInputChannelName(i));
       }
@@ -76,7 +93,12 @@ namespace ASIORecAndPlay
 
     public void ShowRecordingControlPanel()
     {
-      asioRec?.ShowControlPanel();
+      if (!Valid)
+      {
+        return;
+      }
+
+      asioRec.ShowControlPanel();
     }
 
     #endregion Recording
@@ -85,8 +107,13 @@ namespace ASIORecAndPlay
 
     public string[] GetPlaybackDeviceChannelsNames()
     {
+      if (!Valid)
+      {
+        return new string[0];
+      }
+
       List<string> names = new List<string>();
-      for (int i = 0; i < asioPlay?.DriverOutputChannelCount; ++i)
+      for (int i = 0; i < asioPlay.DriverOutputChannelCount; ++i)
       {
         names.Add(asioPlay.AsioOutputChannelName(i));
       }
@@ -95,36 +122,56 @@ namespace ASIORecAndPlay
 
     public void ShowPlaybackControlPanel()
     {
-      asioPlay?.ShowControlPanel();
+      if (!Valid)
+      {
+        return;
+      }
+
+      asioPlay.ShowControlPanel();
     }
 
     #endregion Playback
 
     public void Play()
     {
+      if (!Valid)
+      {
+        return;
+      }
+
       asioRec.Play();
       asioPlay.Play();
     }
 
     public void Stop()
     {
+      if (!Valid)
+      {
+        return;
+      }
+
       asioPlay.Stop();
       asioRec.Stop();
     }
 
     public TimeSpan BufferedDuration()
     {
-      return playBackBuffer.BufferedDuration;
+      return playBackBuffer?.BufferedDuration ?? TimeSpan.Zero;
     }
 
     public void ShowControlPanel(string device)
     {
-      if (asioRec?.DriverName == device)
+      if (!Valid)
+      {
+        return;
+      }
+
+      if (asioRec.DriverName == device)
       {
         asioRec.ShowControlPanel();
       }
 
-      if (asioPlay?.DriverName == device)
+      if (asioPlay.DriverName == device)
       {
         asioPlay.ShowControlPanel();
       }
@@ -144,20 +191,19 @@ namespace ASIORecAndPlay
 
     private void OnAudioAvailable(object sender, AsioAudioAvailableEventArgs e)
     {
+      if (!Valid)
+      {
+        return;
+      }
+
       Array.Clear(deinterleavedMappedOutputSamples, 0, e.SamplesPerBuffer * asioPlay.NumberOfOutputChannels);
 
       var mappings = channelMapping;
       if (mappings.Count() > 0)
       {
-        var lastInputChannel = uint.MaxValue;
-        foreach (var map in mappings)
+        foreach (var map in mappings.Select(item => (inputChannel: item.inputChannel - firstInputChannel, outputChannel: item.outputChannel - firstOutputChannel)))
         {
-          if (lastInputChannel != map.inputChannel)
-          {
-            Marshal.Copy(e.InputBuffers[map.inputChannel], singleChannelSamples, 0, e.SamplesPerBuffer);
-            lastInputChannel = map.inputChannel;
-          }
-          Array.Copy(singleChannelSamples, 0, deinterleavedMappedOutputSamples, map.outputChannel * e.SamplesPerBuffer, e.SamplesPerBuffer);
+          Marshal.Copy(e.InputBuffers[map.inputChannel], deinterleavedMappedOutputSamples, (int)map.outputChannel * e.SamplesPerBuffer, e.SamplesPerBuffer);
         }
 
         for (int channelNumber = 0, totalChannels = asioPlay.NumberOfOutputChannels; channelNumber < totalChannels; ++channelNumber)

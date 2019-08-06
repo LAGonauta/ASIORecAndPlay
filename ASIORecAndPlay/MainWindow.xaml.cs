@@ -17,6 +17,7 @@
 using AudioVUMeter;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Windows;
@@ -37,12 +38,12 @@ namespace ASIORecAndPlay
 
     private void DispatchStatusText(object buffer)
     {
-      status_text.Dispatcher.Invoke(() => UpdateText($"Buffered time: {((RecAndPlay)buffer).BufferedDuration().TotalMilliseconds.ToString()} ms."));
+      Application.Current.Dispatcher.Invoke(() => UpdateText($"Buffered time: {((RecAndPlay)buffer).BufferedDuration().TotalMilliseconds.ToString()} ms."));
     }
 
     private void DispatchPlaybackMeters(object buffer)
     {
-      playBack_left.Dispatcher.Invoke(() => UpdateMeter(((RecAndPlay)buffer).PlaybackAudioValue));
+      Application.Current.Dispatcher.Invoke(() => UpdateMeter(((RecAndPlay)buffer).PlaybackAudioValue));
     }
 
     private void UpdateText(string message)
@@ -82,6 +83,13 @@ namespace ASIORecAndPlay
           WindowState = WindowState.Normal;
         };
 
+      PopulateDevicesList();
+
+      Closing += (sender, args) => Stop();
+    }
+
+    private void PopulateDevicesList()
+    {
       foreach (var device in Asio.GetDevices())
       {
         comboAsioRecordDevices.Items.Add(device);
@@ -97,8 +105,40 @@ namespace ASIORecAndPlay
       {
         comboAsioPlayDevices.SelectedIndex = 0;
       }
+    }
 
-      Closing += (sender, args) => Stop();
+    private void OnDeviceComboBoxStateChanged(object sender, SelectionChangedEventArgs e)
+    {
+      if (sender == comboAsioRecordDevices || sender == comboAsioPlayDevices)
+      {
+        ChannelMapping.Children.Clear();
+        List<string> input = new List<string>();
+        if (comboAsioRecordDevices.SelectedItem != null)
+        {
+          input.Add("None");
+          input.AddRange(Asio.GetChannelNames(comboAsioRecordDevices.SelectedItem.ToString(), ChannelType.Input));
+        }
+
+        string[] output = new string[0];
+        if (comboAsioPlayDevices.SelectedItem != null)
+        {
+          output = Asio.GetChannelNames(comboAsioPlayDevices.SelectedItem.ToString(), ChannelType.Output);
+        }
+
+        for (int i = 0; i < output.Length; ++i)
+        {
+          var text = new TextBlock { Text = output[i] };
+          var comboBox = new ComboBox
+          {
+            ItemsSource = input,
+            Margin = new Thickness { Bottom = 1, Top = 1, Left = 0, Right = 0 },
+            SelectedIndex = input.Count > 1 ? i % (input.Count - 1) + 1 : 0
+          };
+
+          ChannelMapping.Children.Add(text);
+          ChannelMapping.Children.Add(comboBox);
+        }
+      }
     }
 
     protected override void OnStateChanged(EventArgs e)
@@ -106,11 +146,17 @@ namespace ASIORecAndPlay
       if (WindowState == WindowState.Minimized)
       {
         Hide();
-        asioRecAndPlay.CalculateRMS = false;
+        if (asioRecAndPlay != null)
+        {
+          asioRecAndPlay.CalculateRMS = false;
+        }
       }
       else
       {
-        asioRecAndPlay.CalculateRMS = true;
+        if (asioRecAndPlay != null)
+        {
+          asioRecAndPlay.CalculateRMS = true;
+        }
       }
 
       base.OnStateChanged(e);
@@ -146,8 +192,8 @@ namespace ASIORecAndPlay
       }
     }
 
-    private Timer status_text_timer;
-    private Timer audio_meter_timer;
+    private Timer statusTextTimer;
+    private Timer audioMeterTimer;
 
     private void OnButtonBeginClick(object sender, RoutedEventArgs e)
     {
@@ -156,62 +202,32 @@ namespace ASIORecAndPlay
         if (comboAsioRecordDevices.SelectedIndex != comboAsioPlayDevices.SelectedIndex)
         {
           running = true;
-          var channels = 2;
-          if (comboRecordingChannelConfig.SelectedIndex == 2)
+          var mapping = new ChannelMapping();
           {
-            channels = 6;
+            int outputChannel = 0;
+            foreach (var inputBox in ChannelMapping.Children.OfType<ComboBox>())
+            {
+              if (inputBox.SelectedIndex > 0)
+              {
+                mapping.Add((uint)inputBox.SelectedIndex - 1, (uint)outputChannel);
+              }
+
+              ++outputChannel;
+            }
           }
-          else if (comboRecordingChannelConfig.SelectedIndex == 3)
-          {
-            channels = 8;
-          }
-          asioRecAndPlay = new RecAndPlay(comboAsioRecordDevices.Text, channels, comboAsioPlayDevices.Text, channels);
+
+          asioRecAndPlay = new RecAndPlay(comboAsioRecordDevices.Text, comboAsioPlayDevices.Text, mapping);
 
           comboAsioRecordDevices.IsEnabled = false;
           comboAsioPlayDevices.IsEnabled = false;
 
-          stackRecChannels.Children.Clear();
-          {
-            var channelNames = asioRecAndPlay.GetRecordingDeviceChannelsNames();
-            foreach (var channel in channelNames)
-            {
-              TextBlock temp = new TextBlock();
-              temp.Text = channel;
-              stackRecChannels.Children.Add(temp);
-            }
-          }
-
-          stackPlayChannels.Children.Clear();
-          {
-            var channelNames = asioRecAndPlay.GetPlaybackDeviceChannelsNames();
-            foreach (var channel in channelNames)
-            {
-              TextBlock temp = new TextBlock();
-              temp.Text = channel;
-              stackPlayChannels.Children.Add(temp);
-            }
-          }
-          comboRecordingChannelConfig.IsEnabled = false;
-          comboPlaybackChannelConfig.IsEnabled = false;
-
           buttonBegin.Content = "Stop";
 
-          asioRecAndPlay.SetChannelMapping(new ChannelMapping(new Dictionary<uint, uint>
-          {
-            { 0, 0 },
-            { 1, 1 },
-            //{ 2, 4 },
-            //{ 3, 5 },
-            //{ 4, 2 },
-            //{ 5, 3 },
-            //{ 6, 6 },
-            //{ 7, 7 },
-          }));
           asioRecAndPlay.CalculateRMS = true;
           asioRecAndPlay.Play();
 
-          status_text_timer = new Timer(new TimerCallback(DispatchStatusText), asioRecAndPlay, 0, 1000);
-          audio_meter_timer = new Timer(new TimerCallback(DispatchPlaybackMeters), asioRecAndPlay, 0, 300);
+          statusTextTimer = new Timer(new TimerCallback(DispatchStatusText), asioRecAndPlay, 0, 1000);
+          audioMeterTimer = new Timer(new TimerCallback(DispatchPlaybackMeters), asioRecAndPlay, 0, 300);
         }
         else
         {
@@ -222,9 +238,9 @@ namespace ASIORecAndPlay
       }
       else
       {
-        status_text_timer.Dispose();
-        audio_meter_timer.Dispose();
-        status_text.Dispatcher.Invoke(() => UpdateText("Stopped."));
+        statusTextTimer.Dispose();
+        audioMeterTimer.Dispose();
+        Application.Current.Dispatcher.Invoke(() => UpdateText("Stopped."));
         Stop();
       }
     }
@@ -233,19 +249,14 @@ namespace ASIORecAndPlay
     {
       if (running)
       {
-        status_text_timer.Dispose();
-        status_text.Dispatcher.Invoke(() => UpdateText("Stopped."));
+        statusTextTimer.Dispose();
+        Application.Current.Dispatcher.Invoke(() => UpdateText("Stopped."));
 
-        audio_meter_timer.Dispose();
-        playBack_left.Dispatcher.Invoke(() => UpdateMeter(new VolumeMeterChannels()));
-
-        stackPlayChannels.Children.Clear();
-        stackRecChannels.Children.Clear();
+        audioMeterTimer.Dispose();
+        Application.Current.Dispatcher.Invoke(() => UpdateMeter(new VolumeMeterChannels()));
 
         running = false;
         buttonBegin.Content = "Start";
-        comboRecordingChannelConfig.IsEnabled = true;
-        comboPlaybackChannelConfig.IsEnabled = true;
         comboAsioRecordDevices.IsEnabled = true;
         comboAsioPlayDevices.IsEnabled = true;
         asioRecAndPlay.Dispose();
