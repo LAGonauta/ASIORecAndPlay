@@ -3,6 +3,12 @@ using System.Linq;
 
 namespace ASIORecAndPlay
 {
+  internal struct Mapping
+  {
+    public int inputChannel;
+    public int outputChannel;
+  }
+
   internal class ChannelMapping
   {
     private IDictionary<int, int> channelMapping;
@@ -63,12 +69,12 @@ namespace ASIORecAndPlay
     /// Gets an ordered enumerable of a copy the mapping, ordered by input channel.
     /// </summary>
     /// <returns></returns>
-    public IEnumerable<(int inputChannel, int outputChannel)> GetMappingList()
+    public IEnumerable<Mapping> GetMappingList()
     {
       lock (_lock)
       {
         return channelMapping
-        .Select(e => (inputChannel: e.Value, outputChannel: e.Key))
+        .Select(e => new Mapping { inputChannel = e.Value, outputChannel = e.Key })
         .OrderBy(e => e.inputChannel).ToList();
       }
     }

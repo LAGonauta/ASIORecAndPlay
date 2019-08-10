@@ -40,12 +40,12 @@ namespace ASIORecAndPlay
 
     private void DispatchStatusText(object buffer)
     {
-      Application.Current.Dispatcher.Invoke(() => UpdateText($"Buffered time: {((RecAndPlay)buffer).BufferedDuration().TotalMilliseconds.ToString()} ms."));
+      Application.Current.Dispatcher.Invoke(new Action(() => UpdateText($"Buffered time: {((RecAndPlay)buffer).BufferedDuration().TotalMilliseconds.ToString()} ms.")));
     }
 
     private void DispatchPlaybackMeters(object buffer)
     {
-      Application.Current.Dispatcher.Invoke(() => UpdateMeter(((RecAndPlay)buffer).PlaybackAudioValue));
+      Application.Current.Dispatcher.Invoke(new Action(() => UpdateMeter(((RecAndPlay)buffer).PlaybackAudioValue)));
     }
 
     private void UpdateText(string message)
@@ -309,7 +309,7 @@ namespace ASIORecAndPlay
       {
         statusTextTimer.Dispose();
         audioMeterTimer.Dispose();
-        Application.Current.Dispatcher.Invoke(() => UpdateText("Stopped."));
+        Application.Current.Dispatcher.Invoke(new Action(() => UpdateText("Stopped.")));
         Stop();
       }
     }
@@ -319,10 +319,10 @@ namespace ASIORecAndPlay
       if (running)
       {
         statusTextTimer.Dispose();
-        Application.Current.Dispatcher.Invoke(() => UpdateText("Stopped."));
+        Application.Current.Dispatcher.Invoke(new Action(() => UpdateText("Stopped.")));
 
         audioMeterTimer.Dispose();
-        Application.Current.Dispatcher.Invoke(() => UpdateMeter(new VolumeMeterChannels()));
+        Application.Current.Dispatcher.Invoke(new Action(() => UpdateMeter(new VolumeMeterChannels())));
 
         running = false;
         UI_ButtonBegin.Content = "Start";

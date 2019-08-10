@@ -24,7 +24,7 @@ namespace ASIORecAndPlay
     public bool Valid { get; private set; }
     public bool CalculateRMS { get; set; }
 
-    private IEnumerable<(int inputChannel, int outputChannel)> channelMapping;
+    private IEnumerable<Mapping> channelMapping;
     private int firstInputChannel, lastInputChannel, numOutputChannels;
 
     public RecAndPlay(AsioOut recordingDevice, IWavePlayer playingDevice, ChannelMapping channelMapping, ChannelLayout? forcedNumOutputChannels = null)
@@ -143,7 +143,7 @@ namespace ASIORecAndPlay
       var mappings = channelMapping;
       if (mappings.Count() > 0)
       {
-        foreach (var map in mappings.Select(item => (inputChannel: item.inputChannel - firstInputChannel, outputChannel: item.outputChannel)))
+        foreach (var map in mappings.Select(item => new Mapping { inputChannel = item.inputChannel - firstInputChannel, outputChannel = item.outputChannel }))
         {
           for (int sampleNumber = 0; sampleNumber < e.SamplesPerBuffer; ++sampleNumber)
           {
@@ -211,7 +211,6 @@ namespace ASIORecAndPlay
       return (float)Math.Sqrt(sum / samplesPerChannel);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe int GetInputSampleInt32LSB(IntPtr inputBuffer, int n)
     {
       return *((int*)inputBuffer + n);
