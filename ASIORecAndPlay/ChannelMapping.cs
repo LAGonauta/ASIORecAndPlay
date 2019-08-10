@@ -1,24 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace ASIORecAndPlay
 {
   internal class ChannelMapping
   {
-    private IDictionary<uint, uint> channelMapping;
+    private IDictionary<int, int> channelMapping;
     private object _lock = new object();
 
-    public IEnumerable<uint> InputChannels => channelMapping.Values;
+    public IEnumerable<int> InputChannels => channelMapping.Values;
 
-    public IEnumerable<uint> OutputChannels => channelMapping.Keys;
+    public IEnumerable<int> OutputChannels => channelMapping.Keys;
 
     public ChannelMapping()
     {
-      channelMapping = new Dictionary<uint, uint>();
+      channelMapping = new Dictionary<int, int>();
     }
 
-    public ChannelMapping(IDictionary<uint, uint> outputInputPairs)
+    public ChannelMapping(IDictionary<int, int> outputInputPairs)
     {
       channelMapping = outputInputPairs;
     }
@@ -30,7 +29,7 @@ namespace ASIORecAndPlay
     /// <param name="inputChannel">Input channel number</param>
     /// <param name="outputChannel">Output channel number</param>
     /// <returns></returns>
-    public bool Add(uint inputChannel, uint outputChannel)
+    public bool Add(int inputChannel, int outputChannel)
     {
       try
       {
@@ -52,7 +51,7 @@ namespace ASIORecAndPlay
     /// </summary>
     /// <param name="outputChannel"></param>
     /// <returns></returns>
-    public bool Remove(uint outputChannel)
+    public bool Remove(int outputChannel)
     {
       lock (_lock)
       {
@@ -64,7 +63,7 @@ namespace ASIORecAndPlay
     /// Gets an ordered enumerable of a copy the mapping, ordered by input channel.
     /// </summary>
     /// <returns></returns>
-    public IEnumerable<(uint inputChannel, uint outputChannel)> GetMappingList()
+    public IEnumerable<(int inputChannel, int outputChannel)> GetMappingList()
     {
       lock (_lock)
       {
@@ -78,7 +77,7 @@ namespace ASIORecAndPlay
     /// Gets a copy of the internal dictionary.
     /// </summary>
     /// <returns></returns>
-    public IDictionary<uint, uint> GetMappingDictionary()
+    public IDictionary<int, int> GetMappingDictionary()
     {
       lock (_lock)
       {

@@ -16,7 +16,7 @@
         </StatusBar>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <Button x:Name="buttonBegin" Content="Start" VerticalAlignment="Center" Height="20" Click="OnButtonBeginClick" Margin="1" />
+                <Button x:Name="UI_ButtonBegin" Content="Start" VerticalAlignment="Center" Height="20" Click="OnButtonBeginClick" Margin="1" />
                 <GroupBox Header="Playback Audio Meters">
                     <Grid Name="playbackAudioMeter">
                         <Grid.ColumnDefinitions>
@@ -75,21 +75,74 @@
                         <ColumnDefinition />
                         <ColumnDefinition />
                     </Grid.ColumnDefinitions>
-                    <GroupBox Header="Recording device" Grid.Column="0">
+                    <GroupBox Header="Record" Grid.Column="0">
                         <StackPanel Grid.Column="0" Margin="0,0,2,0">
-                            <ComboBox Name="comboAsioRecordDevices" SelectionChanged="OnDeviceComboBoxStateChanged" Margin="0,0,0,5" />
+                            <TextBlock>Device</TextBlock>
+                            <ComboBox Name="UI_RecordDevices" SelectionChanged="OnDeviceComboBoxStateChanged" Margin="0,0,0,5" />
                             <Button Name="buttonRecCP" Content="Control Panel" Click="OnButtonCPClick" Margin="0,0,0,5" />
                         </StackPanel>
                     </GroupBox>
-                    <GroupBox Header="Playback device" Grid.Column="1">
+                    <GroupBox Header="Playback" Grid.Column="1">
                         <StackPanel Margin="2,0,0,0">
-                            <ComboBox Name="comboAsioPlayDevices" SelectionChanged="OnDeviceComboBoxStateChanged" Margin="0,0,0,5" />
-                            <Button Name="buttonPlayCP" Content="Control Panel"  Click="OnButtonCPClick" Margin="0,0,0,5" />
+                            <Grid Name="UI_PlaybackDriver">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Row="0" >Driver</TextBlock>
+                                <RadioButton Name="UI_AsioRadioButton" IsChecked="True" Click="OnPlaybackDriverChanged" Grid.Row="1" Grid.Column="0">ASIO</RadioButton>
+                                <RadioButton Name="UI_WasapiRadioButton" Click="OnPlaybackDriverChanged" Grid.Row="1" Grid.Column="1">WASAPI</RadioButton>
+                            </Grid>
+                            <Border Margin="4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <Grid Name="UI_PlaybackDeviceSelection">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Name="UI_PlaybackDeviceCombobox" Grid.ColumnSpan="2">
+                                    <TextBlock>Device</TextBlock>
+                                    <ComboBox Name="UI_PlaybackDevices" SelectionChanged="OnDeviceComboBoxStateChanged" Margin="0,0,0,5" />
+                                </StackPanel>
+                                <StackPanel Name="UI_WasapiChannelConfigPanel" Grid.Column="1" Margin="2,0,0,0" Visibility="Collapsed">
+                                    <TextBlock>Channel Layout</TextBlock>
+                                    <ComboBox Name="UI_WasapiChannelConfig" SelectionChanged="OnDeviceComboBoxStateChanged" Margin="0,0,0,5" SelectedIndex="0">
+                                        <ComboBoxItem>Mono</ComboBoxItem>
+                                        <ComboBoxItem>Stereo</ComboBoxItem>
+                                        <ComboBoxItem>Quad</ComboBoxItem>
+                                        <ComboBoxItem>5.1</ComboBoxItem>
+                                        <ComboBoxItem>7.1</ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+                            <Border Margin="4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            <Grid Name="UI_WasapiPlaybackSettings" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Name="UI_WasapiLatencyText" Grid.Column="0" />
+                                <Slider Name="UI_WasapiLatency" Grid.Column="0" Grid.Row="1" Minimum="5" Maximum="250" LargeChange="20" SmallChange="1" ValueChanged="UI_WasapiLatency_ValueChanged" Value="10" />
+                                <CheckBox Name="UI_WasapiExclusiveMode" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsChecked="True">Exclusive</CheckBox>
+                                <CheckBox Name="UI_WasapiPullMode" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsChecked="True">Pull mode</CheckBox>
+                                <Border Grid.Row="2" Grid.ColumnSpan="2" Margin="4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" />
+                            </Grid>
+                            <Grid Name="UI_AsioPlayBackSettings">
+                                <Button Name="UI_AsioPlaybackControlPanel" Content="Control Panel"  Click="OnButtonCPClick" Margin="0,0,0,5" />
+                            </Grid>
                         </StackPanel>
                     </GroupBox>
                 </Grid>
-                <GroupBox Header="Channel mapping: Output ← Input">
-                    <StackPanel Name="ChannelMapping" />
+                <GroupBox Name="UI_ChannelMappingBox" Header="Channel mapping: Output ← Input">
+                    <StackPanel Name="UI_ChannelMapping" />
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>

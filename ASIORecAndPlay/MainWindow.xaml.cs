@@ -1,5 +1,5 @@
 ﻿// Simple program to route audio between ASIO devices
-// Copyright(C) 2017  LAGonauta
+// Copyright(C) 2017-2019 LAGonauta
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
 // along with this program.If not, see<http://www.gnu.org/licenses/>.
 
 using AudioVUMeter;
+using NAudio.CoreAudioApi;
+using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,19 +50,30 @@ namespace ASIORecAndPlay
 
     private void UpdateText(string message)
     {
-      status_text.Text = message;
+      if (WindowState != WindowState.Minimized)
+      {
+        status_text.Text = message;
+      }
     }
 
     private void UpdateMeter(VolumeMeterChannels values)
     {
-      playBack_left.NewSampleValues(1, new VUValue[] { values.Left });
-      playBack_right.NewSampleValues(1, new VUValue[] { values.Right });
-      playBack_center.NewSampleValues(1, new VUValue[] { values.Center });
-      playBack_bl.NewSampleValues(1, new VUValue[] { values.BackLeft });
-      playBack_br.NewSampleValues(1, new VUValue[] { values.BackRight });
-      playBack_sl.NewSampleValues(1, new VUValue[] { values.SideLeft });
-      playBack_sr.NewSampleValues(1, new VUValue[] { values.SideRight });
-      playBack_sw.NewSampleValues(1, new VUValue[] { values.Sub });
+      if (WindowState != WindowState.Minimized)
+      {
+        playBack_left.NewSampleValues(1, new VUValue[] { values.Left });
+        playBack_right.NewSampleValues(1, new VUValue[] { values.Right });
+        playBack_center.NewSampleValues(1, new VUValue[] { values.Center });
+        playBack_bl.NewSampleValues(1, new VUValue[] { values.BackLeft });
+        playBack_br.NewSampleValues(1, new VUValue[] { values.BackRight });
+        playBack_sl.NewSampleValues(1, new VUValue[] { values.SideLeft });
+        playBack_sr.NewSampleValues(1, new VUValue[] { values.SideRight });
+        playBack_sw.NewSampleValues(1, new VUValue[] { values.Sub });
+      }
+    }
+
+    private void UI_WasapiLatency_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+      UI_WasapiLatencyText.Text = $"Buffer size: {(sender as Slider).Value.ToString("F0")} ms";
     }
 
     public MainWindow()
@@ -90,39 +103,65 @@ namespace ASIORecAndPlay
 
     private void PopulateDevicesList()
     {
+      PopulatePlaybackDevicesList();
+      PopulateRecordingDeviceList();
+    }
+
+    private void PopulatePlaybackDevicesList()
+    {
+      UI_PlaybackDevices.Items.Clear();
+      var IsAsioDriver = UI_AsioRadioButton.IsChecked.GetValueOrDefault(true);
+      var playbackDeviceList = IsAsioDriver ? Asio.GetDevices() : Wasapi.Endpoints(DataFlow.Render, DeviceState.Active).Select(e => e.FriendlyName);
+      foreach (var device in playbackDeviceList)
+      {
+        UI_PlaybackDevices.Items.Add(device);
+      }
+
+      if (UI_PlaybackDevices.Items.Count > 0)
+      {
+        UI_PlaybackDevices.SelectedIndex = 0;
+      }
+    }
+
+    private void PopulateRecordingDeviceList()
+    {
+      UI_RecordDevices.Items.Clear();
+
       foreach (var device in Asio.GetDevices())
       {
-        comboAsioRecordDevices.Items.Add(device);
-        comboAsioPlayDevices.Items.Add(device);
+        UI_RecordDevices.Items.Add(device);
       }
 
-      if (comboAsioRecordDevices.Items.Count > 0)
+      if (UI_RecordDevices.Items.Count > 0)
       {
-        comboAsioRecordDevices.SelectedIndex = 0;
-      }
-
-      if (comboAsioPlayDevices.Items.Count > 0)
-      {
-        comboAsioPlayDevices.SelectedIndex = 0;
+        UI_RecordDevices.SelectedIndex = 0;
       }
     }
 
     private void OnDeviceComboBoxStateChanged(object sender, SelectionChangedEventArgs e)
     {
-      if (sender == comboAsioRecordDevices || sender == comboAsioPlayDevices)
+      if (UI_ChannelMapping != null &&
+        (sender == UI_RecordDevices || sender == UI_PlaybackDevices || sender == UI_WasapiChannelConfig))
       {
-        ChannelMapping.Children.Clear();
+        UI_ChannelMapping.Children.Clear();
         List<string> input = new List<string>();
-        if (comboAsioRecordDevices.SelectedItem != null)
+        if (UI_RecordDevices.SelectedItem != null)
         {
           input.Add("None");
-          input.AddRange(Asio.GetChannelNames(comboAsioRecordDevices.SelectedItem.ToString(), ChannelType.Input));
+          input.AddRange(Asio.GetChannelNames(UI_RecordDevices.SelectedItem.ToString(), ChannelType.Input));
         }
 
         string[] output = new string[0];
-        if (comboAsioPlayDevices.SelectedItem != null)
+        if (UI_PlaybackDevices.SelectedItem != null)
         {
-          output = Asio.GetChannelNames(comboAsioPlayDevices.SelectedItem.ToString(), ChannelType.Output);
+          if (UI_AsioRadioButton.IsChecked.GetValueOrDefault(true))
+          {
+            output = Asio.GetChannelNames(UI_PlaybackDevices.SelectedItem.ToString(), ChannelType.Output);
+          }
+          else
+          {
+            output = Wasapi.GetChannelNames((ChannelLayout)UI_WasapiChannelConfig.SelectedIndex);
+          }
         }
 
         for (int i = 0; i < output.Length; ++i)
@@ -135,8 +174,8 @@ namespace ASIORecAndPlay
             SelectedIndex = input.Count > 1 ? i % (input.Count - 1) + 1 : 0
           };
 
-          ChannelMapping.Children.Add(text);
-          ChannelMapping.Children.Add(comboBox);
+          UI_ChannelMapping.Children.Add(text);
+          UI_ChannelMapping.Children.Add(comboBox);
         }
       }
     }
@@ -170,13 +209,13 @@ namespace ASIORecAndPlay
     private void OnButtonCPClick(object sender, RoutedEventArgs e)
     {
       string device = string.Empty;
-      if (sender == buttonPlayCP)
+      if (sender == UI_AsioPlaybackControlPanel)
       {
-        device = comboAsioPlayDevices.Text;
+        device = UI_PlaybackDevices.Text;
       }
       else if (sender == buttonRecCP)
       {
-        device = comboAsioRecordDevices.Text;
+        device = UI_RecordDevices.Text;
       }
 
       if (!string.IsNullOrWhiteSpace(device))
@@ -192,6 +231,25 @@ namespace ASIORecAndPlay
       }
     }
 
+    private void OnPlaybackDriverChanged(object sender, RoutedEventArgs e)
+    {
+      if (UI_AsioRadioButton.IsChecked.GetValueOrDefault(true))
+      {
+        UI_AsioPlayBackSettings.Visibility = Visibility.Visible;
+        UI_WasapiPlaybackSettings.Visibility = Visibility.Collapsed;
+        UI_WasapiChannelConfigPanel.Visibility = Visibility.Collapsed;
+        Grid.SetColumnSpan(UI_PlaybackDeviceCombobox, 2);
+      }
+      else
+      {
+        UI_AsioPlayBackSettings.Visibility = Visibility.Collapsed;
+        UI_WasapiPlaybackSettings.Visibility = Visibility.Visible;
+        UI_WasapiChannelConfigPanel.Visibility = Visibility.Visible;
+        Grid.SetColumnSpan(UI_PlaybackDeviceCombobox, 1);
+      }
+      PopulatePlaybackDevicesList();
+    }
+
     private Timer statusTextTimer;
     private Timer audioMeterTimer;
 
@@ -199,29 +257,40 @@ namespace ASIORecAndPlay
     {
       if (!running)
       {
-        if (comboAsioRecordDevices.SelectedIndex != comboAsioPlayDevices.SelectedIndex)
+        if (UI_AsioRadioButton.IsChecked.GetValueOrDefault(true) == false || UI_RecordDevices.SelectedIndex != UI_PlaybackDevices.SelectedIndex)
         {
           running = true;
           var mapping = new ChannelMapping();
           {
             int outputChannel = 0;
-            foreach (var inputBox in ChannelMapping.Children.OfType<ComboBox>())
+            foreach (var inputBox in UI_ChannelMapping.Children.OfType<ComboBox>())
             {
               if (inputBox.SelectedIndex > 0)
               {
-                mapping.Add((uint)inputBox.SelectedIndex - 1, (uint)outputChannel);
+                mapping.Add(inputBox.SelectedIndex - 1, outputChannel);
               }
 
               ++outputChannel;
             }
           }
 
-          asioRecAndPlay = new RecAndPlay(comboAsioRecordDevices.Text, comboAsioPlayDevices.Text, mapping);
+          asioRecAndPlay = new RecAndPlay(
+            new AsioOut(UI_RecordDevices.Text),
 
-          comboAsioRecordDevices.IsEnabled = false;
-          comboAsioPlayDevices.IsEnabled = false;
+            UI_AsioRadioButton.IsChecked.GetValueOrDefault(true) ?
+            new AsioOut(UI_PlaybackDevices.Text)
+            : (IWavePlayer)new WasapiOut(
+              Wasapi.Endpoints(DataFlow.Render, DeviceState.Active).First(endpoint => endpoint.FriendlyName == UI_PlaybackDevices.Text),
+              UI_WasapiExclusiveMode.IsChecked.GetValueOrDefault(true) ? AudioClientShareMode.Exclusive : AudioClientShareMode.Shared,
+              UI_WasapiPullMode.IsChecked.GetValueOrDefault(true),
+              (int)UI_WasapiLatency.Value),
 
-          buttonBegin.Content = "Stop";
+            mapping,
+            UI_WasapiChannelConfig.IsVisible ? (ChannelLayout?)UI_WasapiChannelConfig.SelectedIndex : null);
+
+          BatchChangeElements(false);
+
+          UI_ButtonBegin.Content = "Stop";
 
           asioRecAndPlay.CalculateRMS = true;
           asioRecAndPlay.Play();
@@ -256,11 +325,21 @@ namespace ASIORecAndPlay
         Application.Current.Dispatcher.Invoke(() => UpdateMeter(new VolumeMeterChannels()));
 
         running = false;
-        buttonBegin.Content = "Start";
-        comboAsioRecordDevices.IsEnabled = true;
-        comboAsioPlayDevices.IsEnabled = true;
+        UI_ButtonBegin.Content = "Start";
+        BatchChangeElements(true);
+
         asioRecAndPlay.Dispose();
       }
+    }
+
+    private void BatchChangeElements(bool value)
+    {
+      UI_RecordDevices.IsEnabled = value;
+      UI_PlaybackDeviceSelection.IsEnabled = value;
+      UI_ChannelMappingBox.IsEnabled = value;
+      UI_PlaybackDriver.IsEnabled = value;
+      UI_WasapiPlaybackSettings.IsEnabled = value;
+      UI_WasapiChannelConfigPanel.IsEnabled = value;
     }
   }
 }
