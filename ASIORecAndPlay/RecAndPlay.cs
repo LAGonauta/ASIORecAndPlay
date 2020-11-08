@@ -142,7 +142,6 @@ namespace ASIORecAndPlay
                 return;
             }
 
-            Array.Clear(_interleavedOutputSamples, 0, e.SamplesPerBuffer * _numOutputChannels);
             if (_channelMapping.Any())
             {
                 foreach (var map in _channelMapping)
