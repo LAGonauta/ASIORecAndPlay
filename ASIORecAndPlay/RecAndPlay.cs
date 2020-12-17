@@ -29,8 +29,9 @@ namespace ASIORecAndPlay
         private List<Mapping> _channelMapping;
         private int _numOutputChannels;
 
-        public RecAndPlay(AsioOut recordingDevice, IWavePlayer playingDevice, ChannelMapping channelMapping, ChannelLayout? forcedNumOutputChannels = null)
+        public RecAndPlay(AsioOut recordingDevice, IWavePlayer playingDevice, ChannelMapping channelMapping, ChannelLayout? forcedNumOutputChannels = null, Action onDeviceError = null)
         {
+            var frequency = 48000;
             _recDevice = recordingDevice;
             _playDevice = playingDevice;
 
@@ -49,18 +50,31 @@ namespace ASIORecAndPlay
                 .ToList();
 
             _recDevice.InputChannelOffset = firstInputChannel;
-            _recDevice.InitRecordAndPlayback(null, (lastInputChannel - firstInputChannel) + 1, 48000);
+            _recDevice.InitRecordAndPlayback(null, (lastInputChannel - firstInputChannel) + 1, frequency);
             _recDevice.AudioAvailable += new EventHandler<AsioAudioAvailableEventArgs>(OnAudioAvailable);
 
             _numOutputChannels = forcedNumOutputChannels?.NumChannels() ?? 8;
-            var play = _playDevice as AsioOut;
-            if (play != null)
+            if (_playDevice is AsioOut asioOut)
             {
-                _numOutputChannels = play.DriverOutputChannelCount;
+                _numOutputChannels = asioOut.DriverOutputChannelCount;
             }
-            var format = new WaveFormat(48000, 32, _numOutputChannels);
+            var format = new WaveFormat(frequency, 32, _numOutputChannels);
             _playBackBuffer = new BufferedWaveProvider(format);
+            _playBackBuffer.DiscardOnBufferOverflow = true;
             _playDevice.Init(_playBackBuffer);
+
+            if (onDeviceError != null) {
+                _playDevice.PlaybackStopped += new EventHandler<StoppedEventArgs>((_, _) =>
+                {
+                    if (!Valid)
+                    {
+                        return;
+                    }
+
+                    onDeviceError();
+                });
+            }
+
             Valid = true;
         }
 
@@ -128,14 +142,17 @@ namespace ASIORecAndPlay
 
         public void Dispose()
         {
-            Valid = false;
-            _playDevice.Dispose();
-            _recDevice.Dispose();
+            if (Valid)
+            {
+                Valid = false;
+                _playDevice.Dispose();
+                _recDevice.Dispose();
+            }
         }
 
         #region Private
 
-        private void OnAudioAvailable(object sender, AsioAudioAvailableEventArgs e)
+        private void OnAudioAvailable(object _, AsioAudioAvailableEventArgs e)
         {
             if (!Valid)
             {
@@ -213,7 +230,7 @@ namespace ASIORecAndPlay
             for (int i = 0; i < samplesPerChannel; ++i)
             {
                 float item = samples[channelNumber + i * numOutputChannels];
-                sum += item * item / ((float)int.MaxValue * int.MaxValue);
+                sum += (item * item) / ((float)int.MaxValue * int.MaxValue);
             }
 
             return (float)Math.Sqrt(sum / samplesPerChannel);

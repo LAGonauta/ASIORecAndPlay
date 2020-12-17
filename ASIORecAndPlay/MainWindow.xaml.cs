@@ -286,7 +286,8 @@ namespace ASIORecAndPlay
               (int)UI_WasapiLatency.Value),
 
             mapping,
-            UI_WasapiChannelConfig.IsVisible ? (ChannelLayout?)UI_WasapiChannelConfig.SelectedIndex : null);
+            UI_WasapiChannelConfig.IsVisible ? (ChannelLayout?)UI_WasapiChannelConfig.SelectedIndex : null,
+            () => { OnButtonBeginClick(null, null); OnPlaybackDriverChanged(null, null); });
 
           BatchChangeElements(false);
 
@@ -309,7 +310,6 @@ namespace ASIORecAndPlay
       {
         statusTextTimer.Dispose();
         audioMeterTimer.Dispose();
-        Application.Current.Dispatcher.Invoke(new Action(() => UpdateText("Stopped.")));
         Stop();
       }
     }
