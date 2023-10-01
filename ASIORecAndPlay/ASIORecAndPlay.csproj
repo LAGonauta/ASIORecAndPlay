@@ -36,5 +36,11 @@
     <PackageReference Include="NAudio">
       <Version>2.2.1</Version>
     </PackageReference>
+    <PackageReference Include="ReactiveUI" Version="19.4.1" />
+    <PackageReference Include="ReactiveUI.WPF" Version="19.4.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Model\" />
+    <Folder Include="View\" />
   </ItemGroup>
 </Project>

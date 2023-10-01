@@ -9,8 +9,8 @@ namespace ASIORecAndPlay
     Mono,
     Stereo,
     Quad,
-    S51,
-    S71
+    Surround51,
+    Surround71
   }
 
   public static class Wasapi
@@ -34,10 +34,10 @@ namespace ASIORecAndPlay
         case ChannelLayout.Quad:
           return new string[] { "Left", "Right", "Back Left", "Back Right" };
 
-        case ChannelLayout.S51:
+        case ChannelLayout.Surround51:
           return new string[] { "Left", "Right", "Center", "Sub", "Side Left", "Side Right" };
 
-        case ChannelLayout.S71:
+        case ChannelLayout.Surround71:
           return new string[] { "Left", "Right", "Center", "Sub", "Back Left", "Back Right", "Side Left", "Side Right" };
 
         default:
@@ -58,10 +58,10 @@ namespace ASIORecAndPlay
         case ChannelLayout.Quad:
           return 4;
 
-        case ChannelLayout.S51:
+        case ChannelLayout.Surround51:
           return 6;
 
-        case ChannelLayout.S71:
+        case ChannelLayout.Surround71:
           return 8;
 
         default:

@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see<http://www.gnu.org/licenses/>.
 
+using ASIORecAndPlay.ViewModel;
 using AudioVUMeter;
-using NAudio.CoreAudioApi;
-using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Reflection;
 using System.Threading;
 using System.Windows;
@@ -33,27 +33,11 @@ namespace ASIORecAndPlay
   /// </summary>
   public partial class MainWindow : Window
   {
-    private RecAndPlay asioRecAndPlay;
-    private bool running;
-
     private System.Windows.Forms.NotifyIcon tray_icon;
-
-    private void DispatchStatusText(object buffer)
-    {
-      Application.Current.Dispatcher.Invoke(new Action(() => UpdateText($"Buffered time: {((RecAndPlay)buffer).BufferedDuration().TotalMilliseconds.ToString()} ms.")));
-    }
 
     private void DispatchPlaybackMeters(object buffer)
     {
-      Application.Current.Dispatcher.Invoke(new Action(() => UpdateMeter(((RecAndPlay)buffer).PlaybackAudioValue)));
-    }
-
-    private void UpdateText(string message)
-    {
-      if (WindowState != WindowState.Minimized)
-      {
-        status_text.Text = message;
-      }
+      Application.Current.Dispatcher.Invoke(() => UpdateMeter(((RecAndPlay)buffer).PlaybackAudioValue));
     }
 
     private void UpdateMeter(VolumeMeterChannels values)
@@ -71,14 +55,11 @@ namespace ASIORecAndPlay
       }
     }
 
-    private void UI_WasapiLatency_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-      UI_WasapiLatencyText.Text = $"Buffer size: {(sender as Slider).Value.ToString("F0")} ms";
-    }
-
     public MainWindow()
     {
       InitializeComponent();
+      var indexes = UI_ChannelMapping.Children.OfType<ComboBox>().Select(x => x.SelectedIndex);
+      DataContext = new MainWindowViewModel(indexes); // FIXME
 
       var icon = System.Drawing.Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().ManifestModule.Name);
 
@@ -89,53 +70,21 @@ namespace ASIORecAndPlay
         Icon = icon
       };
 
-      tray_icon.DoubleClick +=
-        delegate (object sender, EventArgs e)
-        {
-          Show();
-          WindowState = WindowState.Normal;
-        };
-
-      PopulateDevicesList();
-
-      Closing += (sender, args) => Stop();
-    }
-
-    private void PopulateDevicesList()
-    {
-      PopulatePlaybackDevicesList();
-      PopulateRecordingDeviceList();
-    }
-
-    private void PopulatePlaybackDevicesList()
-    {
-      UI_PlaybackDevices.Items.Clear();
-      var IsAsioDriver = UI_AsioRadioButton.IsChecked.GetValueOrDefault(true);
-      var playbackDeviceList = IsAsioDriver ? Asio.GetDevices() : Wasapi.Endpoints(DataFlow.Render, DeviceState.Active).Select(e => e.FriendlyName);
-      foreach (var device in playbackDeviceList)
+      tray_icon.DoubleClick += (sender, e) =>
       {
-        UI_PlaybackDevices.Items.Add(device);
-      }
-
-      if (UI_PlaybackDevices.Items.Count > 0)
+        Show();
+        WindowState = WindowState.Normal;
+      };
+      Closing += (sender, args) =>
       {
-        UI_PlaybackDevices.SelectedIndex = 0;
-      }
-    }
-
-    private void PopulateRecordingDeviceList()
-    {
-      UI_RecordDevices.Items.Clear();
-
-      foreach (var device in Asio.GetDevices())
+        var context = (MainWindowViewModel)DataContext;
+        context.Stop();
+      };
+      Loaded += (sender, args) =>
       {
-        UI_RecordDevices.Items.Add(device);
-      }
-
-      if (UI_RecordDevices.Items.Count > 0)
-      {
-        UI_RecordDevices.SelectedIndex = 0;
-      }
+        var context = (MainWindowViewModel)DataContext;
+        context.OnLoaded();
+      };
     }
 
     private void OnDeviceComboBoxStateChanged(object sender, SelectionChangedEventArgs e)
@@ -144,7 +93,7 @@ namespace ASIORecAndPlay
         (sender == UI_RecordDevices || sender == UI_PlaybackDevices || sender == UI_WasapiChannelConfig))
       {
         UI_ChannelMapping.Children.Clear();
-        List<string> input = new List<string>();
+        List<string> input = new();
         if (UI_RecordDevices.SelectedItem != null)
         {
           input.Add("None");
@@ -160,7 +109,7 @@ namespace ASIORecAndPlay
           }
           else
           {
-            output = Wasapi.GetChannelNames((ChannelLayout)UI_WasapiChannelConfig.SelectedIndex);
+            output = Wasapi.GetChannelNames((ChannelLayout)UI_WasapiChannelConfig.SelectedItem);
           }
         }
 
@@ -185,18 +134,10 @@ namespace ASIORecAndPlay
       if (WindowState == WindowState.Minimized)
       {
         Hide();
-        if (asioRecAndPlay != null)
-        {
-          asioRecAndPlay.CalculateRMS = false;
-        }
       }
-      else
-      {
-        if (asioRecAndPlay != null)
-        {
-          asioRecAndPlay.CalculateRMS = true;
-        }
-      }
+
+      var context = (MainWindowViewModel)DataContext;
+      context.OnWindowStateChanged(WindowState);
 
       base.OnStateChanged(e);
     }
@@ -206,140 +147,20 @@ namespace ASIORecAndPlay
       tray_icon.Visible = false;
     }
 
-    private void OnButtonCPClick(object sender, RoutedEventArgs e)
-    {
-      string device = string.Empty;
-      if (sender == UI_AsioPlaybackControlPanel)
-      {
-        device = UI_PlaybackDevices.Text;
-      }
-      else if (sender == buttonRecCP)
-      {
-        device = UI_RecordDevices.Text;
-      }
-
-      if (!string.IsNullOrWhiteSpace(device))
-      {
-        if (asioRecAndPlay != null && asioRecAndPlay.Valid)
-        {
-          asioRecAndPlay.ShowControlPanel(device);
-        }
-        else
-        {
-          Asio.ShowControlPanel(device);
-        }
-      }
-    }
-
     private void OnPlaybackDriverChanged(object sender, RoutedEventArgs e)
     {
+      var context = (MainWindowViewModel)DataContext;
       if (UI_AsioRadioButton.IsChecked.GetValueOrDefault(true))
       {
-        UI_AsioPlayBackSettings.Visibility = Visibility.Visible;
-        UI_WasapiPlaybackSettings.Visibility = Visibility.Collapsed;
-        UI_WasapiChannelConfigPanel.Visibility = Visibility.Collapsed;
+        context.UseAsio = true;
         Grid.SetColumnSpan(UI_PlaybackDeviceCombobox, 2);
       }
       else
       {
-        UI_AsioPlayBackSettings.Visibility = Visibility.Collapsed;
-        UI_WasapiPlaybackSettings.Visibility = Visibility.Visible;
-        UI_WasapiChannelConfigPanel.Visibility = Visibility.Visible;
+        context.UseAsio = false;
         Grid.SetColumnSpan(UI_PlaybackDeviceCombobox, 1);
       }
-      PopulatePlaybackDevicesList();
-    }
-
-    private Timer statusTextTimer;
-    private Timer audioMeterTimer;
-
-    private void OnButtonBeginClick(object sender, RoutedEventArgs e)
-    {
-      if (!running)
-      {
-        if (UI_AsioRadioButton.IsChecked.GetValueOrDefault(true) == false || UI_RecordDevices.SelectedIndex != UI_PlaybackDevices.SelectedIndex)
-        {
-          running = true;
-          var mapping = new ChannelMapping();
-          {
-            int outputChannel = 0;
-            foreach (var inputBox in UI_ChannelMapping.Children.OfType<ComboBox>())
-            {
-              if (inputBox.SelectedIndex > 0)
-              {
-                mapping.Add(inputBox.SelectedIndex - 1, outputChannel);
-              }
-
-              ++outputChannel;
-            }
-          }
-
-          asioRecAndPlay = new RecAndPlay(
-            new AsioOut(UI_RecordDevices.Text),
-
-            UI_AsioRadioButton.IsChecked.GetValueOrDefault(true) ?
-            new AsioOut(UI_PlaybackDevices.Text)
-            : (IWavePlayer)new WasapiOut(
-              Wasapi.Endpoints(DataFlow.Render, DeviceState.Active).First(endpoint => endpoint.FriendlyName == UI_PlaybackDevices.Text),
-              UI_WasapiExclusiveMode.IsChecked.GetValueOrDefault(true) ? AudioClientShareMode.Exclusive : AudioClientShareMode.Shared,
-              UI_WasapiPullMode.IsChecked.GetValueOrDefault(true),
-              (int)UI_WasapiLatency.Value),
-
-            mapping,
-            UI_WasapiChannelConfig.IsVisible ? (ChannelLayout?)UI_WasapiChannelConfig.SelectedIndex : null,
-            () => { OnButtonBeginClick(null, null); OnPlaybackDriverChanged(null, null); });
-
-          BatchChangeElements(false);
-
-          UI_ButtonBegin.Content = "Stop";
-
-          asioRecAndPlay.CalculateRMS = true;
-          asioRecAndPlay.Play();
-
-          statusTextTimer = new Timer(new TimerCallback(DispatchStatusText), asioRecAndPlay, 0, 1000);
-          audioMeterTimer = new Timer(new TimerCallback(DispatchPlaybackMeters), asioRecAndPlay, 0, 300);
-        }
-        else
-        {
-          // When using the same ASIO device we must use other type of logic, which is not implemented here.
-          // The basis of this program, Mark Heath's NAudio ASIO PatchBay, has a proper solution for that.
-          MessageBox.Show("ASIO devices must not be the same");
-        }
-      }
-      else
-      {
-        statusTextTimer.Dispose();
-        audioMeterTimer.Dispose();
-        Stop();
-      }
-    }
-
-    private void Stop()
-    {
-      if (running)
-      {
-        statusTextTimer.Dispose();
-        Application.Current.Dispatcher.Invoke(new Action(() => UpdateText("Stopped.")));
-
-        audioMeterTimer.Dispose();
-        Application.Current.Dispatcher.Invoke(new Action(() => UpdateMeter(new VolumeMeterChannels())));
-
-        running = false;
-        UI_ButtonBegin.Content = "Start";
-        BatchChangeElements(true);
-
-        asioRecAndPlay.Dispose();
-      }
-    }
-
-    private void BatchChangeElements(bool value)
-    {
-      UI_RecordDevices.IsEnabled = value;
-      UI_PlaybackDeviceSelection.IsEnabled = value;
-      UI_ChannelMappingBox.IsEnabled = value;
-      UI_PlaybackDriver.IsEnabled = value;
-      UI_WasapiPlaybackSettings.IsEnabled = value;
-      UI_WasapiChannelConfigPanel.IsEnabled = value;
+      context.OnPlaybackDriverChanged.Execute(Unit.Default);
     }
   }
 }
