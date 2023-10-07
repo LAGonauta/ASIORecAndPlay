@@ -19,25 +19,23 @@
     <LangVersion>default</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Graphicloads-Colorful-Long-Shadow-Sound.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\Graphicloads-Colorful-Long-Shadow-Sound.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject />
+    <StartupObject></StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Resource Include="Graphicloads-Colorful-Long-Shadow-Sound.ico" />
+    <EmbeddedResource Include="Resources\Graphicloads-Colorful-Long-Shadow-Sound.ico" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="audio-vu-meter">
       <Version>1.0.1</Version>
     </PackageReference>
-    <PackageReference Include="Hardcodet.NotifyIcon.Wpf.NetCore" Version="1.0.14" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="H.NotifyIcon.Wpf" Version="2.0.118" />
     <PackageReference Include="NAudio">
       <Version>2.2.1</Version>
     </PackageReference>
-    <PackageReference Include="ReactiveUI" Version="19.4.1" />
-    <PackageReference Include="ReactiveUI.WPF" Version="19.4.1" />
+    <PackageReference Include="ReactiveUI.WPF" Version="19.5.1" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Model\" />

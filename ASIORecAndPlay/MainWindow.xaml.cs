@@ -16,12 +16,13 @@
 
 using ASIORecAndPlay.ViewModel;
 using AudioVUMeter;
+using H.NotifyIcon;
+using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -33,7 +34,7 @@ namespace ASIORecAndPlay
   /// </summary>
   public partial class MainWindow : Window
   {
-    private System.Windows.Forms.NotifyIcon tray_icon;
+    private TaskbarIcon tray_icon;
 
     private void DispatchPlaybackMeters(object buffer)
     {
@@ -61,29 +62,36 @@ namespace ASIORecAndPlay
       var indexes = UI_ChannelMapping.Children.OfType<ComboBox>().Select(x => x.SelectedIndex);
       DataContext = new MainWindowViewModel(indexes); // FIXME
 
-      var icon = System.Drawing.Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().ManifestModule.Name);
-
-      tray_icon = new System.Windows.Forms.NotifyIcon()
+      var assembly = Assembly.GetExecutingAssembly();
+      using (var stream = assembly.GetManifestResourceStream("ASIORecAndPlay.Resources.Graphicloads-Colorful-Long-Shadow-Sound.ico"))
       {
-        Visible = true,
-        Text = Title,
-        Icon = icon
-      };
+        tray_icon = new TaskbarIcon
+        {
+          Icon = new System.Drawing.Icon(stream),
+          ToolTipText = Title,
+          Visibility = Visibility.Visible,
+          DoubleClickCommand = ReactiveCommand.Create(() =>
+          {
+            Show();
+            WindowState = WindowState.Normal;
+          })
+        };
+        tray_icon.ForceCreate(false);
+      }
 
-      tray_icon.DoubleClick += (sender, e) =>
-      {
-        Show();
-        WindowState = WindowState.Normal;
-      };
       Closing += (sender, args) =>
       {
-        var context = (MainWindowViewModel)DataContext;
-        context.Stop();
+        if (DataContext is MainWindowViewModel context)
+        {
+          context.Stop();
+        }
       };
       Loaded += (sender, args) =>
       {
-        var context = (MainWindowViewModel)DataContext;
-        context.OnLoaded();
+        if (DataContext is MainWindowViewModel context)
+        {
+          context.OnLoaded();
+        }
       };
     }
 
@@ -144,7 +152,7 @@ namespace ASIORecAndPlay
 
     private void Window_Closing(object sender, EventArgs e)
     {
-      tray_icon.Visible = false;
+      tray_icon.Visibility = Visibility.Hidden;
     }
 
     private void OnPlaybackDriverChanged(object sender, RoutedEventArgs e)

@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ASIORecAndPlay"
         xmlns:controls="clr-namespace:AudioVUMeter.Controls;assembly=AudioVUMeterWPFControl"
+        xmlns:tb="clr-namespace:H.NotifyIcon;assembly=H.NotifyIcon.Wpf"
         xmlns:viewmodel="clr-namespace:ASIORecAndPlay.ViewModel"
         d:DataContext="{d:DesignInstance Type=viewmodel:MainWindowViewModel}"
         mc:Ignorable="d"
